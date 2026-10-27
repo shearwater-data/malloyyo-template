@@ -9,7 +9,7 @@
     },
     "malloyyo_instance": {
       "type": "http",
-      "url": "${MALLOYYO_URL:-https://shearwater.malloyyo.com}/mcp",
+      "url": "${MALLOYYO_URL}/mcp",
       "headers": {
         "Authorization": "Bearer ${MALLOYYO_TOKEN:-}"
       }

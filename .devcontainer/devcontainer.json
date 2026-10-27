@@ -27,19 +27,17 @@
 
   // Codespaces secrets (repo Settings → Secrets and variables → Codespaces)
   // arrive as environment variables on their own. Listing them here only makes
-  // the "Create codespace" page ask for them. MALLOYYO_TOKEN is the one the
-  // default (instance preview) workflow needs; the warehouse key is optional
-  // and only unlocks local `malloyyo lint` / `dashboard dev` / author queries.
+  // the "Create codespace" page ask for them. MALLOYYO_URL says which instance
+  // this repo belongs to, and MALLOYYO_TOKEN lets the CLI and Claude reach it.
+  // Database secrets are not listed because they depend on the database: run
+  // /connect-database in Claude.
   "secrets": {
     "MALLOYYO_TOKEN": {
-      "description": "Malloyyo API token with the mcp + publish scopes (<instance>/settings/tokens). Lets Claude preview, query and publish through the instance.",
+      "description": "Malloyyo API token with the mcp + publish scopes (<instance>/settings/tokens). Lets the CLI publish and Claude query the instance, with no sign-in.",
       "documentationUrl": "https://github.com/malloydata/malloyyo/blob/main/docs/api-tokens.md"
     },
     "MALLOYYO_URL": {
-      "description": "Optional. Instance to author against, e.g. https://shearwater.malloyyo.com (the default)."
-    },
-    "BIGQUERY_SHEARWATER_JSON": {
-      "description": "Optional. Whole BigQuery service-account JSON, for compiling and querying inside the codespace. Leave empty to let the instance compile."
+      "description": "Your Malloyyo instance's address, e.g. https://yourcompany.malloyyo.com (no trailing slash). Claude and `malloyyo publish` use it."
     }
   },
 
@@ -47,6 +45,7 @@
   // forwarded from your own shell. Never commit the values themselves.
   //
   // "remoteEnv": {
+  //   "MALLOYYO_URL": "${localEnv:MALLOYYO_URL}",
   //   "MALLOYYO_TOKEN": "${localEnv:MALLOYYO_TOKEN}",
   //   "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
   // },

@@ -2,35 +2,60 @@
 
 A repo publishes one dataset per directory under `datasets/`, and publishes as a
 unit. Connections live in `malloy-config.json`; secrets are only ever
-`{ "env": … }` references.
+`{ "env": … }` references, and never pasted into chat or files.
+
+The person you're working with may not be a developer. Explain in plain
+language, say what each step is for, and give commands they need to run as
+copy-paste blocks.
 
 `datasets/example/` is a placeholder that exists only so the instance accepts
 the repo (it refuses one with no dataset directory). Once the first real
 dataset compiles, delete it.
 
-## Two MCP servers, one default
+## How models are built here
 
-- `malloyyo_instance` — the Malloyyo instance (`$MALLOYYO_URL`, default
-  https://shearwater.malloyyo.com). **Use this by default.** The instance
-  compiles with its own warehouse credentials, so nothing secret has to be in
-  this environment.
-- `malloyyo_author` — local `malloyyo mcp --develop`. Compiles and queries in
-  this container, so it only works for non-DuckDB connections when the
-  warehouse secret (e.g. `BIGQUERY_SHEARWATER_JSON`) is set here.
+Everything is built and checked **in this container**, with the local
+`malloyyo_author` server (`compile_file`, `query`), `malloyyo sql`,
+`malloyyo lint` and `malloyyo dashboard dev`. That is the intended workflow,
+not a fallback.
 
-On the first turn, check the setup before writing anything:
+- The template ships only a `duckdb` connection. When the person wants data
+  from any other database (BigQuery, MotherDuck, Postgres, Snowflake, …), or a
+  source fails with "No connection named …", use the `connect-database` skill
+  first.
+- Before modelling, check the connection's secrets are set: for each
+  `{ "env": NAME }` in `malloy-config.json`, `test -n "$NAME"` (never print the
+  value). If one is missing, `connect-database` covers how to set it.
+- Explore the data with `malloyyo sql <connection> -e "…"` against the
+  database's information schema, ask what the model should answer, then write
+  `datasets/<name>/`, compile, and check the numbers with real queries.
+- Commit on a branch and open a PR. Never publish or merge without asking.
 
-1. Call `malloyyo_instance` `yo_help("authoring/start")` and follow it. If its
-   authoring tools (`list_repos`, `preview_changes`) are missing, say so: either
-   `MALLOYYO_TOKEN` is unset / lacks the `publish` scope, or the instance does
-   not have authoring turned on.
-2. `list_repos` must include this repo (`git remote get-url origin`). If it
-   doesn't, an admin has to add it, or do a first
-   `malloyyo publish --repo <owner/name> --create-datasets`.
-3. Check whether local compiling is possible: `test -n "$BIGQUERY_SHEARWATER_JSON"`.
+The Malloyyo instance is whatever `$MALLOYYO_URL` says; never assume a
+particular one. If it's empty, ask the person for their instance's address and
+tell them to add it as the `MALLOYYO_URL` Codespaces secret (GitHub → Settings
+→ Codespaces), then restart the codespace.
 
-Loop: explore with `list_tables` / `describe_table`, edit files, then
-`preview_changes` and query the preview address to check the numbers. Use
-`malloyyo lint` and `malloyyo dashboard dev` only when step 3 passed (or the
-dataset is DuckDB-only). Commit on a branch and open a PR; never publish or
-merge without asking.
+`malloyyo_instance` is that instance's own MCP server. Use it for
+`yo_help` and to query what's already published. Its authoring tools
+(`list_repos`, `preview_changes`, `list_tables`, …) are usually not offered;
+that is expected, so don't look for them, don't report their absence, and
+don't suggest turning them on.
+
+## Publishing
+
+- Publishing normally happens on its own: the repo's GitHub webhook tells the
+  instance about each push to `main`, so merging the PR publishes it. If a merge
+  didn't show up on the instance, the webhook step in the README's setup guide
+  is probably missing.
+- The first time a dataset appears, or to publish by hand:
+  `malloyyo publish -i "$MALLOYYO_URL" --repo <owner/name> --create-datasets`,
+  with `--dry-run` first to show the person what would be sent. The repo has
+  no publish target in `malloy-config.json`, so always pass `-i`. Creating a
+  dataset needs an instance admin.
+- The CLI reads `MALLOYYO_TOKEN` from the environment, so it needs no sign-in.
+  Don't run `malloyyo login` in a codespace: its browser callback goes to a
+  `localhost` port the person's browser can't reach. If a login is
+  unavoidable, use `malloyyo login "$MALLOYYO_URL" --no-browser`; when the
+  browser lands on a dead `http://localhost:<port>/callback?…` page, ask for
+  that URL and deliver it from inside the container with `curl -s "<url>"`.
