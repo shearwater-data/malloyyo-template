@@ -38,8 +38,9 @@ already set, skip this step.
 
 ### 3. Add the repo to Malloyyo
 
-On the instance, **Add a repository** → `<owner>/<repo>`, branch `main`. This
-needs an instance admin. It works straight away because the template ships
+On the instance, go to **Home → Admin → General → + Add Malloy model from
+GitHub**, and enter `<owner>/<repo>` with branch `main`. This needs an instance
+admin. It works straight away because the template ships
 `datasets/example/`, a tiny placeholder dataset; delete it once your own
 dataset exists.
 
