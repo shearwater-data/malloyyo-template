@@ -16,9 +16,17 @@ reach this environment only as Codespaces secrets or a shell `read -s`.
 
 ## 1. Ask what they're connecting to
 
+Always ask; never default to a connection, `duckdb` included, even if it's
+already in `malloy-config.json` (it exists only for the example placeholder).
 Ask for the database type and the non-secret details: project or account,
 database, schema, host. Don't guess them. If they don't know, stop and say who
 usually does (whoever owns the warehouse).
+
+The published model reads the credential from the **instance's** environment
+under the same env name as here, so the instance must have it set under that
+name too. A missing name builds fine here and then fails on the instance with
+"Could not load the default credentials" plus a cascade of "no such field"
+errors. Tell the person which name the admin needs to have on the instance.
 
 ## 2. Write the connection
 
@@ -26,21 +34,19 @@ Read `yo_help("connection-setup")` and the per-connector properties at
 <https://docs.malloydata.dev/documentation/setup/config> before writing; don't
 write property names from memory.
 
-- Add the connection beside the existing `duckdb` one; don't remove that one
-  while `datasets/example/` still uses it.
-- Name it after what it is (`bigquery`, `motherduck`, `analytics_pg`), and use
-  that name in sources: `source: x is motherduck.table('…')`.
-- Secrets as `{ "env": "NAME" }`. Use an UPPER_SNAKE name that says what it is
-  and whose it is, e.g. `BIGQUERY_ANALYTICS_JSON`, `MOTHERDUCK_TOKEN`,
-  `ANALYTICS_PG_PASSWORD`. If this connection will be published to an
-  instance that already has the database, ask the admin which env name the
-  server uses and use that one.
-- **BigQuery:** the codespace's create page offers
-  `BIGQUERY_SERVICE_ACCOUNT_JSON`. If `test -n "$BIGQUERY_SERVICE_ACCOUNT_JSON"`
-  passes, use that name and skip step 3: the key is already here. The project
-  ID is in the key (`echo "$BIGQUERY_SERVICE_ACCOUNT_JSON" | jq -r .project_id`
-  prints only that field); confirm with the person that it's the project the
-  data lives in.
+- **BigQuery is already set up.** The template ships a `bigquery` connection
+  (project `shearwaterdata-dev-1`) that reads `BIGQUERY_SERVICE_ACCOUNT_JSON`,
+  the key the codespace's create page asks for. Don't rename that env name. If
+  `test -n "$BIGQUERY_SERVICE_ACCOUNT_JSON"` passes, skip step 3. If the data
+  is in another project, change only `projectId`; the key's own project is
+  `echo "$BIGQUERY_SERVICE_ACCOUNT_JSON" | jq -r .project_id` (prints only
+  that field).
+- For any other database, add the connection beside `duckdb` and `bigquery`
+  (don't remove `duckdb` while `datasets/example/` uses it). Name it after
+  what it is (`motherduck`, `analytics_pg`) and use that name in sources:
+  `source: x is motherduck.table('…')`.
+- Secrets as `{ "env": "NAME" }`, UPPER_SNAKE, saying what and whose, e.g.
+  `MOTHERDUCK_TOKEN`, `ANALYTICS_PG_PASSWORD`.
 
 Common shapes (check the docs for the rest):
 
@@ -94,6 +100,7 @@ confirm the user can see what they expect.
 ## 5. The instance side
 
 Building and checking the model now works here. For the published model to
-query the database, the Malloyyo server needs the same env name set in **its**
-environment. If the instance doesn't already have this database, that's an
-admin change: tell the user which name to ask for before they publish.
+query the database, the Malloyyo server needs every env name from
+`malloy-config.json` set in **its** environment, under exactly the same name.
+That's an admin change: tell the person which names to ask for before they
+publish.

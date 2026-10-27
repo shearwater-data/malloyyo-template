@@ -2,6 +2,11 @@
   "connections": {
     "duckdb": {
       "is": "duckdb"
+    },
+    "bigquery": {
+      "is": "bigquery",
+      "projectId": "shearwaterdata-dev-1",
+      "serviceAccountKeyJson": { "env": "BIGQUERY_SERVICE_ACCOUNT_JSON" }
     }
   }
 }

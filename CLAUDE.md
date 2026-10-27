@@ -19,13 +19,19 @@ Everything is built and checked **in this container**, with the local
 `malloyyo lint` and `malloyyo dashboard dev`. That is the intended workflow,
 not a fallback.
 
-- The template ships only a `duckdb` connection. When the person wants data
-  from any other database (BigQuery, MotherDuck, Postgres, Snowflake, …), or a
-  source fails with "No connection named …", use the `connect-database` skill
-  first.
-- Before modelling, check the connection's secrets are set: for each
-  `{ "env": NAME }` in `malloy-config.json`, `test -n "$NAME"` (never print the
-  value). If one is missing, `connect-database` covers how to set it.
+- **Never assume a connection.** Before exploring or writing any source, ask
+  the person where their data lives, even when the request names a table.
+  Offer the connections in `malloy-config.json` that aren't placeholders, plus
+  "another database" and "files (CSV / Parquet)". Only then use it.
+  - `bigquery` reads `BIGQUERY_SERVICE_ACCOUNT_JSON`; keep that env name, the
+    instance uses the same.
+  - `duckdb` is there only for `datasets/example/`. It is not a default; don't
+    pick it unless the person says their data is in files or DuckDB.
+  - For another database, or when a source fails with "No connection named …",
+    use the `connect-database` skill.
+- Before modelling, check the chosen connection's secrets are set: for each
+  `{ "env": NAME }` it uses, `test -n "$NAME"` (never print the value). If one
+  is missing, `connect-database` covers how to set it.
 - Explore the data with `malloyyo sql <connection> -e "…"` against the
   database's information schema, ask what the model should answer, then write
   `datasets/<name>/`, compile, and check the numbers with real queries.

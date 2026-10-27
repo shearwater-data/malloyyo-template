@@ -32,11 +32,11 @@ merging to `main` publishes it to your Malloyyo instance.
    have a secret for isn't shown again; change those under GitHub → Settings →
    Codespaces.
 5. **Connect your data:** in the codespace terminal run `claude`, then
-   `/connect-database`. Claude asks which database, writes the connection, and
-   tells you which secrets to set and where. Never paste a key or password into
-   the chat. For a workshop, the facilitator may have set shared read-only
-   secrets for everyone already. Data in a CSV or Parquet file needs no
-   connection at all.
+   `/connect-database`. Claude always asks where your data lives (BigQuery,
+   another database, or files) and never picks one for you. It writes the
+   connection if needed and tells you which secrets to set and where. Never
+   paste a key or password into the chat. For a workshop, the facilitator may
+   have set shared read-only secrets for everyone already.
 6. **Build:** describe your use case:
 
    > add a dataset for my use case from `<table>`, with an overview dashboard,
@@ -117,8 +117,12 @@ malloyyo publish -i "$MALLOYYO_URL" --repo <owner/name> --create-datasets
 ```
 
 The published model queries the database with the **instance's** credentials,
-so the env names in `malloy-config.json` must also be set on the Malloyyo
-server. For a database the instance doesn't have yet, ask its admin.
+so every env name in `malloy-config.json` must also be set on the Malloyyo
+server under the same name: `BIGQUERY_SERVICE_ACCOUNT_JSON` for BigQuery. For a
+name the instance doesn't have yet, ask its admin to add it.
+
+If a publish fails with "Could not load the default credentials" followed by
+many "no such field" errors, the config's env name isn't set on the server.
 
 Commit `.devcontainer/` before the first publish: that is what turns on the
 codespace icon for the dataset in Malloyyo.
@@ -140,7 +144,7 @@ because the code expires in a few minutes.
 | `.mcp.json` | `malloyyo_author` (local build tools) and `malloyyo_instance` (the instance's help and published models) MCP servers |
 | `.claude/` | Pre-approved tools, malloyyo skills, and `connect-database` |
 | `CLAUDE.md` | How Claude builds here, how publishing works, and to explain in plain language |
-| `malloy-config.json` | A `duckdb` connection; more via `/connect-database` |
+| `malloy-config.json` | `bigquery` reading `BIGQUERY_SERVICE_ACCOUNT_JSON`, and `duckdb` for the example only; Claude asks which to use, and adds more via `/connect-database` |
 | `datasets/` | One directory per dataset; `example/` is a placeholder to replace |
 
 ## Adapting it
