@@ -37,27 +37,17 @@ merging to `main` publishes it to your Malloyyo instance.
    A secret you've already saved in an earlier session shows **Associate with
    repository?** instead of a box: tick it to reuse the saved value. Then
    **Create new codespace**. The first start takes a few minutes.
-4. **Check your secrets:** in the codespace terminal,
-
-   ```bash
-   test -n "$MALLOYYO_URL" && test -n "$MALLOYYO_TOKEN" && echo ok
-   ```
-
-   If it doesn't print `ok`, a box was left empty or a checkbox unticked. Add
-   or fix it under GitHub → your avatar → **Settings → Codespaces → Codespaces
-   secrets**, give this repo access under **Repository access**, then stop and
-   restart the codespace.
-5. **Build:** in the codespace terminal run `claude`, then
+4. **Build:** in the codespace terminal run `claude`, then
    `/connect-database`. Claude always asks where your data lives (BigQuery,
    another database, or files) and never picks one for you. Never paste a key
    or password into the chat. Then describe your use case:
 
    > add a dataset for my use case from `<table>`, with an overview dashboard,
    > and remove the example dataset
-6. **Review:** check the model with `malloyyo lint` and see the dashboards with
+5. **Review:** check the model with `malloyyo lint` and see the dashboards with
    `malloyyo dashboard dev -C datasets/<name>`. When you're happy, Claude opens
    a pull request for your team to review.
-7. **Publish:** merge the pull request and the webhook publishes it. The
+6. **Publish:** merge the pull request and the webhook publishes it. The
    first time a new dataset appears, it has to be created once, which an
    instance admin does from the codespace:
 
