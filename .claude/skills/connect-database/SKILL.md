@@ -35,6 +35,12 @@ write property names from memory.
   `ANALYTICS_PG_PASSWORD`. If this connection will be published to an
   instance that already has the database, ask the admin which env name the
   server uses and use that one.
+- **BigQuery:** the codespace's create page offers
+  `BIGQUERY_SERVICE_ACCOUNT_JSON`. If `test -n "$BIGQUERY_SERVICE_ACCOUNT_JSON"`
+  passes, use that name and skip step 3: the key is already here. The project
+  ID is in the key (`echo "$BIGQUERY_SERVICE_ACCOUNT_JSON" | jq -r .project_id`
+  prints only that field); confirm with the person that it's the project the
+  data lives in.
 
 Common shapes (check the docs for the rest):
 

@@ -18,12 +18,19 @@ merging to `main` publishes it to your Malloyyo instance.
    facilitator gives you its address, e.g. `https://yourcompany.malloyyo.com`),
    go to `/settings/tokens` on it and create a token with the `mcp` and
    `publish` scopes. Copy it now: it is shown only once.
-4. **Open a codespace:** in your new repo, **Code → Codespaces → … → New with
-   options**. Fill in:
+4. **Open a codespace:** in your new repo, click **Code → Codespaces**, then
+   the **…** menu → **New with options**. Don't use the green "Create
+   codespace on main" button or "Open in a codespace" on the template page:
+   those skip the page with the fields below. Fill in:
    - `MALLOYYO_URL`: the instance's address, with no trailing slash.
    - `MALLOYYO_TOKEN`: the token from step 3.
+   - `BIGQUERY_SERVICE_ACCOUNT_JSON`: only if your data is in BigQuery. Paste
+     the whole key file. Leave it empty otherwise.
 
-   Then **Create codespace**. The first start takes a few minutes.
+   Then **Create codespace**. The first start takes a few minutes. GitHub
+   saves each value as one of your Codespaces secrets. A field you already
+   have a secret for isn't shown again; change those under GitHub → Settings →
+   Codespaces.
 5. **Connect your data:** in the codespace terminal run `claude`, then
    `/connect-database`. Claude asks which database, writes the connection, and
    tells you which secrets to set and where. Never paste a key or password into
@@ -52,8 +59,10 @@ it until your own dataset exists, then delete it.
    | --- | --- | --- |
    | `MALLOYYO_TOKEN` | **Yes** | `<instance>/settings/tokens`, scopes `mcp` + `publish` |
    | `MALLOYYO_URL` | **Yes** | Your instance's address, e.g. `https://yourcompany.malloyyo.com`, no trailing slash |
+   | `BIGQUERY_SERVICE_ACCOUNT_JSON` | Only for BigQuery | The whole service-account key file |
 
-   Database secrets come later, from `/connect-database`.
+   These are also asked for on **New with options** when the codespace is
+   created. Other databases' secrets come from `/connect-database`.
 3. **Add the repo to Malloyyo:** an instance admin opens **Add a repository**
    on the instance and enters `<owner>/<name>` and branch `main`. The instance
    refuses a repo with no dataset directory, which is why the template ships

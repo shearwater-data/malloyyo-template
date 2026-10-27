@@ -29,8 +29,12 @@
   // arrive as environment variables on their own. Listing them here only makes
   // the "Create codespace" page ask for them. MALLOYYO_URL says which instance
   // this repo belongs to, and MALLOYYO_TOKEN lets the CLI and Claude reach it.
-  // Database secrets are not listed because they depend on the database: run
-  // /connect-database in Claude.
+  // BIGQUERY_SERVICE_ACCOUNT_JSON is optional; /connect-database in Claude
+  // uses it for a BigQuery connection, and covers other databases too.
+  //
+  // GitHub shows these fields only on Code → Codespaces → … → "New with
+  // options", and skips any the person already has as a Codespaces secret for
+  // this repo.
   "secrets": {
     "MALLOYYO_TOKEN": {
       "description": "Malloyyo API token with the mcp + publish scopes (<instance>/settings/tokens). Lets the CLI publish and Claude query the instance, with no sign-in.",
@@ -38,6 +42,9 @@
     },
     "MALLOYYO_URL": {
       "description": "Your Malloyyo instance's address, e.g. https://yourcompany.malloyyo.com (no trailing slash). Claude and `malloyyo publish` use it."
+    },
+    "BIGQUERY_SERVICE_ACCOUNT_JSON": {
+      "description": "Optional, only for BigQuery data. The whole service-account key file, pasted as is. Leave empty for other databases; Claude's /connect-database sets those up."
     }
   },
 
