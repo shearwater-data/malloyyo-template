@@ -10,41 +10,56 @@ merging to `main` publishes it to your Malloyyo instance.
 1. **Create your repo:** open
    [this link](https://github.com/new?template_owner=shearwater-data&template_name=malloyyo-template)
    (or **Use this template** → **Create a new repository** on this page).
-   Don't clone this repo: a clone still pushes to the template.
-2. **Name it** `malloyyo-<usecase>`, lowercase with dashes, e.g.
-   `malloyyo-retail-returns`. Pick your own account (or the workshop org, if
-   you were told to).
-3. **Get a Malloyyo token:** sign in to your Malloyyo instance (the
-   facilitator gives you its address, e.g. `https://yourcompany.malloyyo.com`),
-   go to `/settings/tokens` on it and create a token with the `mcp` and
-   `publish` scopes. Copy it now: it is shown only once.
-4. **Open a codespace:** in your new repo, click **Code → Codespaces**, then
-   the **…** menu → **New with options**. Don't use the green "Create
-   codespace on main" button or "Open in a codespace" on the template page:
-   those skip the page with the fields below. Fill in:
-   - `MALLOYYO_URL`: the instance's address, with no trailing slash.
-   - `MALLOYYO_TOKEN`: the token from step 3.
+   Don't clone this repo: a clone still pushes to the template. Name it
+   `malloyyo-<usecase>`, lowercase with plain dashes, e.g.
+   `malloyyo-retail-returns`, under the workshop org (`shearwater-data`) unless
+   told otherwise.
+2. **Add it to Malloyyo** (an instance admin, or the facilitator for
+   everyone):
+   - On the instance, **Add a repository** → `<owner>/<repo>`, branch `main`.
+     It works straight away because the template ships `datasets/example/`, a
+     tiny placeholder dataset. A private repo also needs the instance to have
+     GitHub access to it.
+   - In the GitHub repo, add the **webhook** so every merge publishes:
+     **Settings → Webhooks → Add webhook**, filled in as in
+     [step 4 of the setup guide](#set-up-a-new-model-repo).
+3. **Open a codespace:** on the instance, click the **codespace icon** next to
+   the new dataset → **Create new codespace**. The first start takes a few
+   minutes.
+4. **Set your secrets:** GitHub → your avatar → **Settings → Codespaces →
+   Codespaces secrets**:
+   - `MALLOYYO_URL`: the instance's address (the facilitator gives it to you),
+     e.g. `https://yourcompany.malloyyo.com`, with no trailing slash.
+   - `MALLOYYO_TOKEN`: on the instance, go to `/settings/tokens` and create a
+     token with the `mcp` and `publish` scopes. Copy it straight away: it is
+     shown only once.
    - `BIGQUERY_SERVICE_ACCOUNT_JSON`: only if your data is in BigQuery. Paste
-     the whole key file. Leave it empty otherwise.
+     the whole key file.
 
-   Then **Create codespace**. The first start takes a few minutes. GitHub
-   saves each value as one of your Codespaces secrets. A field you already
-   have a secret for isn't shown again; change those under GitHub → Settings →
-   Codespaces.
-5. **Connect your data:** in the codespace terminal run `claude`, then
+   For each one, under **Repository access**, pick your new repo. If you
+   already have them from an earlier session, just add the repo to their
+   access. Then **stop and restart the codespace** (or **Codespaces: Rebuild
+   Container** from the command palette) so it picks them up. Check with
+   `test -n "$MALLOYYO_TOKEN" && echo ok`.
+5. **Build:** in the codespace terminal run `claude`, then
    `/connect-database`. Claude always asks where your data lives (BigQuery,
-   another database, or files) and never picks one for you. It writes the
-   connection if needed and tells you which secrets to set and where. Never
-   paste a key or password into the chat. For a workshop, the facilitator may
-   have set shared read-only secrets for everyone already.
-6. **Build:** describe your use case:
+   another database, or files) and never picks one for you. Never paste a key
+   or password into the chat. Then describe your use case:
 
    > add a dataset for my use case from `<table>`, with an overview dashboard,
    > and remove the example dataset
+6. **Review:** check the model with `malloyyo lint` and see the dashboards with
+   `malloyyo dashboard dev -C datasets/<name>`. When you're happy, Claude opens
+   a pull request for your team to review.
+7. **Publish:** merge the pull request and the webhook publishes it. The
+   first time a new dataset appears, it has to be created once, which an
+   instance admin does from the codespace:
 
-   Check the result with `malloyyo lint` and see dashboards with
-   `malloyyo dashboard dev -C datasets/<name>`. Claude opens a pull request
-   when you're happy with it.
+   ```bash
+   malloyyo publish -i "$MALLOYYO_URL" --repo <owner/repo> --create-datasets
+   ```
+
+   After that, every merge updates it on its own.
 
 `datasets/example/` is only there so the instance can register the repo. Leave
 it until your own dataset exists, then delete it.
