@@ -77,10 +77,11 @@ claude
 `read -s` keeps the value off the screen and out of shell history. Repeat for
 each name.
 
-**To keep it** (every codespace for this repo): GitHub → their avatar →
-**Settings → Codespaces → Secrets → New secret**, name `NAME`, and grant it to
-this repo. Then stop and restart the codespace (or **Codespaces: Rebuild
-Container**). For a workshop, an org admin can set it once at the org level.
+**To keep it** (every codespace for this repo): a repo secret, added by hand
+in the repo's GitHub page: **Settings → Secrets and variables → Codespaces →
+New repository secret**, name `NAME`. It needs admin on the repo. Then stop
+and restart the codespace (or **Codespaces: Rebuild Container**). Don't set
+secrets with `gh` or any other command; the person adds them in GitHub.
 
 Check it arrived without printing it: `test -n "$NAME" && echo set`.
 

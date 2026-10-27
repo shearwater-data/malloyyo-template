@@ -25,28 +25,14 @@
   // One screen of "what do I type now", printed into each new terminal.
   "postAttachCommand": "malloyyo-devcontainer-info",
 
-  // Codespaces secrets (repo Settings → Secrets and variables → Codespaces)
-  // arrive as environment variables on their own. Listing them here only makes
-  // the "Create codespace" page ask for them. MALLOYYO_URL says which instance
-  // this repo belongs to, and MALLOYYO_TOKEN lets the CLI and Claude reach it.
-  // BIGQUERY_SERVICE_ACCOUNT_JSON is optional; /connect-database in Claude
-  // uses it for a BigQuery connection, and covers other databases too.
-  //
-  // GitHub shows these fields only on Code → Codespaces → … → "New with
-  // options", and skips any the person already has as a Codespaces secret for
-  // this repo.
-  "secrets": {
-    "MALLOYYO_TOKEN": {
-      "description": "Malloyyo API token with the mcp + publish scopes (<instance>/settings/tokens). Lets the CLI publish and Claude query the instance, with no sign-in.",
-      "documentationUrl": "https://github.com/malloydata/malloyyo/blob/main/docs/api-tokens.md"
-    },
-    "MALLOYYO_URL": {
-      "description": "Your Malloyyo instance's address, e.g. https://yourcompany.malloyyo.com (no trailing slash). Claude and `malloyyo publish` use it."
-    },
-    "BIGQUERY_SERVICE_ACCOUNT_JSON": {
-      "description": "Optional, only for BigQuery data. The whole service-account key file, pasted as is. Leave empty for other databases; Claude's /connect-database sets those up."
-    }
-  },
+  // Secrets live on the REPO: Settings → Secrets and variables → Codespaces →
+  // New repository secret. Every codespace started on the repo gets them as
+  // environment variables:
+  //   MALLOYYO_URL                   which Malloyyo instance this repo belongs to
+  //   MALLOYYO_TOKEN                 lets the CLI and Claude reach it
+  //   BIGQUERY_SERVICE_ACCOUNT_JSON  only for BigQuery data
+  // They are deliberately not listed in a "secrets" block here: that makes the
+  // create page save them to each person's own account instead.
 
   // This block is for a LOCAL Dev Container, where the values have to be
   // forwarded from your own shell. Never commit the values themselves.

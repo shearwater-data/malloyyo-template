@@ -24,19 +24,20 @@ merging to `main` publishes it to your Malloyyo instance.
      **Settings → Webhooks → Add webhook**, filled in as in
      [step 4 of the setup guide](#set-up-a-new-model-repo).
    - **Copy your token:** on the instance, go to `/settings/tokens` and create
-     a token with the `mcp` and `publish` scopes. Copy it straight away and
-     keep it handy for step 3: it is shown only once.
-3. **Open a codespace:** on the instance, click the **codespace icon** next to
-   the new dataset. GitHub opens a page with **Recommended secrets**. Fill in:
-   - `MALLOYYO_URL`: the instance's address (the facilitator gives it to you),
-     e.g. `https://yourcompany.malloyyo.com`, with no trailing slash.
-   - `MALLOYYO_TOKEN`: the token you copied in step 2.
-   - `BIGQUERY_SERVICE_ACCOUNT_JSON`: only if your data is in BigQuery. Paste
-     the whole key file. Leave it empty otherwise.
+     a token with the `mcp` and `publish` scopes. Copy it straight away: it is
+     shown only once.
+   - **Add the repo's secrets:** in the GitHub repo, **Settings → Secrets and
+     variables → Codespaces → New repository secret**, once for each:
+     - `MALLOYYO_URL`: the instance's address, e.g.
+       `https://yourcompany.malloyyo.com`, with no trailing slash.
+     - `MALLOYYO_TOKEN`: the token you just copied.
+     - `BIGQUERY_SERVICE_ACCOUNT_JSON`: only if the data is in BigQuery. Paste
+       the whole key file.
 
-   A secret you've already saved in an earlier session shows **Associate with
-   repository?** instead of a box: tick it to reuse the saved value. Then
-   **Create new codespace**. The first start takes a few minutes.
+     Every codespace on this repo gets them, so do this before step 3.
+3. **Open a codespace:** on the instance, click the **codespace icon** next to
+   the new dataset → **Create new codespace**. The first start takes a few
+   minutes.
 4. **Build:** in the codespace terminal run `claude`, then
    `/connect-database`. Claude always asks where your data lives (BigQuery,
    another database, or files) and never picks one for you. Never paste a key
@@ -63,8 +64,9 @@ it until your own dataset exists, then delete it.
 ## Set up a new model repo
 
 1. **Use this template** → create the new repo.
-2. **Codespaces secrets:** repo **Settings → Secrets and variables →
-   Codespaces** (or once for your user or the org):
+2. **Repo secrets:** repo **Settings → Secrets and variables → Codespaces →
+   New repository secret** (needs admin on the repo). Every codespace started
+   on the repo gets them as environment variables:
 
    | Secret | Needed? | What |
    | --- | --- | --- |
@@ -72,8 +74,11 @@ it until your own dataset exists, then delete it.
    | `MALLOYYO_URL` | **Yes** | Your instance's address, e.g. `https://yourcompany.malloyyo.com`, no trailing slash |
    | `BIGQUERY_SERVICE_ACCOUNT_JSON` | Only for BigQuery | The whole service-account key file |
 
-   These are also asked for on **New with options** when the codespace is
-   created. Other databases' secrets come from `/connect-database`.
+   They're shared by everyone who opens a codespace on the repo, so the token
+   acts as whoever created it; use one meant for the repo. Add them before
+   opening a codespace; a codespace that's already running picks up new ones
+   after you stop and restart it. Other databases' secrets come from
+   `/connect-database`.
 3. **Add the repo to Malloyyo:** an instance admin opens **Add a repository**
    on the instance and enters `<owner>/<name>` and branch `main`. The instance
    refuses a repo with no dataset directory, which is why the template ships
@@ -101,8 +106,8 @@ Everything is built and checked in the codespace:
 
 1. `/connect-database` adds the connection to `malloy-config.json`, with
    secrets as `{ "env": … }` names only, and walks you through setting them:
-   `read -s` in the terminal for this session, or a Codespaces secret (GitHub →
-   Settings → Codespaces) to keep them.
+   `read -s` in the terminal for this session, or a repo secret (repo
+   Settings → Secrets and variables → Codespaces) to keep them.
 2. Claude explores the tables, asks what the model should answer, writes
    `datasets/<name>/`, and checks the numbers with real queries.
 3. You check it too:
@@ -162,4 +167,4 @@ because the code expires in a few minutes.
 
 Nothing in the repo names an instance: Claude, the MCP connection and
 `malloyyo publish -i` all read `MALLOYYO_URL`. To move a repo to another
-instance, change that Codespaces secret and restart the codespace.
+instance, change that repo secret and restart the codespace.

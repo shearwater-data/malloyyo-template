@@ -38,9 +38,11 @@ not a fallback.
 - Commit on a branch and open a PR. Never publish or merge without asking.
 
 The Malloyyo instance is whatever `$MALLOYYO_URL` says; never assume a
-particular one. If it's empty, ask the person for their instance's address and
-tell them to add it as the `MALLOYYO_URL` Codespaces secret (GitHub → Settings
-→ Codespaces), then restart the codespace.
+particular one. Secrets are repo-level Codespaces secrets, added by hand in
+the repo's GitHub page (**Settings → Secrets and variables → Codespaces → New
+repository secret**); never set them with `gh` or another command. If
+`MALLOYYO_URL` or `MALLOYYO_TOKEN` is empty, tell the person to add it there,
+then stop and restart the codespace.
 
 `malloyyo_instance` is that instance's own MCP server. Use it for
 `yo_help` and to query what's already published. Its authoring tools
