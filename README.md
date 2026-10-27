@@ -23,24 +23,30 @@ merging to `main` publishes it to your Malloyyo instance.
    - In the GitHub repo, add the **webhook** so every merge publishes:
      **Settings → Webhooks → Add webhook**, filled in as in
      [step 4 of the setup guide](#set-up-a-new-model-repo).
+   - **Copy your token:** on the instance, go to `/settings/tokens` and create
+     a token with the `mcp` and `publish` scopes. Copy it straight away and
+     keep it handy for step 3: it is shown only once.
 3. **Open a codespace:** on the instance, click the **codespace icon** next to
-   the new dataset → **Create new codespace**. The first start takes a few
-   minutes.
-4. **Set your secrets:** GitHub → your avatar → **Settings → Codespaces →
-   Codespaces secrets**:
+   the new dataset. GitHub opens a page with **Recommended secrets**. Fill in:
    - `MALLOYYO_URL`: the instance's address (the facilitator gives it to you),
      e.g. `https://yourcompany.malloyyo.com`, with no trailing slash.
-   - `MALLOYYO_TOKEN`: on the instance, go to `/settings/tokens` and create a
-     token with the `mcp` and `publish` scopes. Copy it straight away: it is
-     shown only once.
+   - `MALLOYYO_TOKEN`: the token you copied in step 2.
    - `BIGQUERY_SERVICE_ACCOUNT_JSON`: only if your data is in BigQuery. Paste
-     the whole key file.
+     the whole key file. Leave it empty otherwise.
 
-   For each one, under **Repository access**, pick your new repo. If you
-   already have them from an earlier session, just add the repo to their
-   access. Then **stop and restart the codespace** (or **Codespaces: Rebuild
-   Container** from the command palette) so it picks them up. Check with
-   `test -n "$MALLOYYO_TOKEN" && echo ok`.
+   A secret you've already saved in an earlier session shows **Associate with
+   repository?** instead of a box: tick it to reuse the saved value. Then
+   **Create new codespace**. The first start takes a few minutes.
+4. **Check your secrets:** in the codespace terminal,
+
+   ```bash
+   test -n "$MALLOYYO_URL" && test -n "$MALLOYYO_TOKEN" && echo ok
+   ```
+
+   If it doesn't print `ok`, a box was left empty or a checkbox unticked. Add
+   or fix it under GitHub → your avatar → **Settings → Codespaces → Codespaces
+   secrets**, give this repo access under **Repository access**, then stop and
+   restart the codespace.
 5. **Build:** in the codespace terminal run `claude`, then
    `/connect-database`. Claude always asks where your data lives (BigQuery,
    another database, or files) and never picks one for you. Never paste a key
