@@ -52,15 +52,15 @@ don't suggest turning them on.
 
 ## Publishing
 
-- Publishing normally happens on its own: the repo's GitHub webhook tells the
-  instance about each push to `main`, so merging the PR publishes it. If a merge
-  didn't show up on the instance, the webhook step in the README's setup guide
-  is probably missing.
-- The first time a dataset appears, or to publish by hand:
-  `malloyyo publish -i "$MALLOYYO_URL" --repo <owner/name> --create-datasets`,
-  with `--dry-run` first to show the person what would be sent. The repo has
-  no publish target in `malloy-config.json`, so always pass `-i`. Creating a
-  dataset needs an instance admin.
+- After the PR is merged, the instance picks it up through the repo's GitHub
+  webhook, or when someone clicks **Refresh from GitHub** on the repo's page on
+  the instance. If a merge didn't show up, the webhook (README step 3) is
+  probably missing.
+- A **new** dataset has to be created once, by an instance admin: **Refresh and
+  create missing datasets** on the repo's page, or
+  `malloyyo publish -i "$MALLOYYO_URL" --repo <owner/name> --create-datasets`
+  (run `--dry-run` first and show the person what would be sent; the repo has
+  no publish target in `malloy-config.json`, so always pass `-i`).
 - The CLI reads `MALLOYYO_TOKEN` from the environment, so it needs no sign-in.
   Don't run `malloyyo login` in a codespace: its browser callback goes to a
   `localhost` port the person's browser can't reach. If a login is
