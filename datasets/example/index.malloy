@@ -1,0 +1,18 @@
+##" Placeholder dataset so the instance can register this repo. Replace it with your own: rename this directory to your use case, or add a new dataset and delete this one.
+## dataset { title="Example" }
+
+#" A tiny inline table, so this dataset compiles anywhere with no warehouse or secrets.
+#(agent) Placeholder only. Delete it once the repo has a real dataset.
+source: example is duckdb.sql("""
+  select * from (values
+    ('north', 120),
+    ('south', 80),
+    ('east', 95)
+  ) as t(region, amount)
+""") extend {
+  measure:
+    row_count is count()
+    total_amount is amount.sum()
+}
+
+export { example }

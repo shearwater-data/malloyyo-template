@@ -4,6 +4,10 @@ A repo publishes one dataset per directory under `datasets/`, and publishes as a
 unit. Connections live in `malloy-config.json`; secrets are only ever
 `{ "env": … }` references.
 
+`datasets/example/` is a placeholder that exists only so the instance accepts
+the repo (it refuses one with no dataset directory). Once the first real
+dataset compiles, delete it.
+
 ## Two MCP servers, one default
 
 - `malloyyo_instance` — the Malloyyo instance (`$MALLOYYO_URL`, default
