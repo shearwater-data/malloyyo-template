@@ -53,13 +53,25 @@ it under **Settings → Webhooks → Add webhook**: content type
 
 ### 4. Add the repo secrets
 
-In the GitHub repo, **Settings → Secrets and variables → Codespaces → New
-repository secret**, once for each:
+First, create the Malloyyo token. On the instance, go to **Home → Tokens**
+and create one:
+
+- **Name**: what it's for, e.g. `<repo> codespace`.
+- **Scopes**: tick both **mcp** (lets Claude query the instance) and
+  **publish** (lets the CLI publish).
+- **Expires**: your choice. When it expires, Claude and publishing stop
+  working until you replace the secret.
+
+The token is shown **only once**, as a line like
+`export MALLOYYO_TOKEN=myo_main_…`. Copy just the part from `myo_` onwards.
+
+Then, in the GitHub repo, **Settings → Secrets and variables → Codespaces →
+New repository secret**, once for each:
 
 | Secret | Needed? | Value |
 | --- | --- | --- |
 | `MALLOYYO_URL` | Yes | The instance's address, e.g. `https://yourcompany.malloyyo.com`, no trailing slash |
-| `MALLOYYO_TOKEN` | Yes | A token from `<instance>/settings/tokens` with the `mcp` and `publish` scopes. Copy it when it's created: it's shown only once |
+| `MALLOYYO_TOKEN` | Yes | The token you just copied, starting with `myo_` |
 | `BIGQUERY_SERVICE_ACCOUNT_JSON` | Only for BigQuery | The whole service-account key file |
 
 Every codespace on the repo gets them, so add them before opening one; a
