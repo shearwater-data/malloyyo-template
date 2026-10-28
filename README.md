@@ -86,7 +86,9 @@ few minutes.
 
 ### 6. Build
 
-In the codespace terminal, run `claude` and describe what you want:
+In the codespace terminal, run `claude`. The first time, it asks you to log in:
+pick your Claude account, open the link it shows, sign in, and paste the code
+back into the terminal. Then describe what you want:
 
 > add a dataset for my use case from `<table>`, with an overview dashboard,
 > and remove the example dataset
