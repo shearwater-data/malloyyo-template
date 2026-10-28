@@ -57,11 +57,6 @@ Common shapes (check the docs for the rest):
 | Postgres | `"is": "postgres"`, host / port / database / username, `"password": { "env": … }` | the password |
 | Snowflake, Databricks, … | see the docs | per connector |
 
-BigQuery has a no-secret option for working in the codespace only: run
-`gcloud auth application-default login --no-launch-browser` in the terminal and
-drop `serviceAccountKeyJson`. The instance still needs its own credential to
-publish.
-
 ## 3. Get the secret into the codespace
 
 Give the user both options, in this order, and tell them which env names to use.

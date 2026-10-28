@@ -125,7 +125,7 @@ errors, that name is missing on the instance.
 | --- | --- |
 | `.devcontainer/devcontainer.json` | Prebuilt `malloyyo-devcontainer` image |
 | `.mcp.json` | `malloyyo_author` (local build tools) and `malloyyo_instance` (the instance at `MALLOYYO_URL`) MCP servers |
-| `.claude/` | Pre-approved tools, malloyyo skills, and `connect-database` |
+| `.claude/` | Pre-approved tools and the `connect-database` skill |
 | `CLAUDE.md` | How Claude works in this repo |
 | `malloy-config.json` | `bigquery` (reads `BIGQUERY_SERVICE_ACCOUNT_JSON`), and `duckdb` for the example only |
 | `datasets/` | One directory per dataset; `example/` is a placeholder to replace |

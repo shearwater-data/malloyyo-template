@@ -37,6 +37,17 @@ not a fallback.
   `datasets/<name>/`, compile, and check the numbers with real queries.
 - Commit on a branch and open a PR. Never publish or merge without asking.
 
+Writing a dataset (`yo_help("repo/datasets")` has the details):
+
+- The directory name is the dataset's name and identity: a short lowercase
+  slug, e.g. `datasets/sales/`.
+- At the top of its `index.malloy`, `##" What this dataset is.` and
+  `## dataset { title="…" }`. Two hashes: a single `#"` documents the next
+  source instead.
+- Give every exported source a one-sentence `#"` and `#(agent)` lines on how to
+  query it, and each measure a `#"`. People and Claude read these in
+  `describe_source`.
+
 The Malloyyo instance is whatever `$MALLOYYO_URL` says; never assume a
 particular one. Secrets are repo-level Codespaces secrets, added by hand in
 the repo's GitHub page (**Settings → Secrets and variables → Codespaces → New
@@ -44,11 +55,8 @@ repository secret**); never set them with `gh` or another command. If
 `MALLOYYO_URL` or `MALLOYYO_TOKEN` is empty, tell the person to add it there,
 then stop and restart the codespace.
 
-`malloyyo_instance` is that instance's own MCP server. Use it for
-`yo_help` and to query what's already published. Its authoring tools
-(`list_repos`, `preview_changes`, `list_tables`, …) are usually not offered;
-that is expected, so don't look for them, don't report their absence, and
-don't suggest turning them on.
+`malloyyo_instance` is that instance's MCP server: use it for `yo_help` and to
+query what's already published, nothing else.
 
 ## Publishing
 
@@ -61,9 +69,5 @@ don't suggest turning them on.
   `malloyyo publish -i "$MALLOYYO_URL" --repo <owner/name> --create-datasets`
   (run `--dry-run` first and show the person what would be sent; the repo has
   no publish target in `malloy-config.json`, so always pass `-i`).
-- The CLI reads `MALLOYYO_TOKEN` from the environment, so it needs no sign-in.
-  Don't run `malloyyo login` in a codespace: its browser callback goes to a
-  `localhost` port the person's browser can't reach. If a login is
-  unavoidable, use `malloyyo login "$MALLOYYO_URL" --no-browser`; when the
-  browser lands on a dead `http://localhost:<port>/callback?…` page, ask for
-  that URL and deliver it from inside the container with `curl -s "<url>"`.
+- The CLI reads `MALLOYYO_TOKEN` from the environment; never run
+  `malloyyo login` in a codespace.
