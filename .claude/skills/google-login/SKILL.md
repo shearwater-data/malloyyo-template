@@ -56,8 +56,14 @@ malloyyo sql bigquery -e "select 1 as one"
 - **"Access Denied" / "permission"**: their Google account can't read that
   project. The person who manages Google Cloud grants them **BigQuery Data
   Viewer** on the datasets and **BigQuery Job User** on the project.
-- **"Unable to detect a Project Id"**: the sign-in didn't complete, or
-  `malloy-config-local.json` is missing. Run `.claude/bin/google-login status`.
+- **"Unable to detect a Project Id"**: the sign-in didn't complete, or gcloud
+  has no default project. Run `.claude/bin/google-login status`, then
+  `.claude/bin/google-login local-config`, which sets gcloud's project to the
+  `bigquery` connection's `projectId` (without a key, queries run in gcloud's
+  project, not the connection's).
+- **"User does not have bigquery.jobs.create permission in project …"**: the
+  sign-in worked, but their account can't run queries in that project. Same
+  fix as "Access Denied" above.
 - **Can't get it working.** Fall back to the shared read-only key described in
   `docs/team-setup.md`: whoever manages the team environment adds it, and you
   delete `malloy-config-local.json` so the key is used.

@@ -20,6 +20,13 @@ local_config() {
         if .value.is == "bigquery" then .value |= del(.serviceAccountKeyJson) else . end)' \
     malloy-config.json > malloy-config-local.json &&
     echo "Wrote malloy-config-local.json: BigQuery now uses your Google sign-in."
+  # Without a key, BigQuery runs (and bills) queries in gcloud's default
+  # project rather than the connection's projectId, so point gcloud at it.
+  project=$(jq -r '[.connections[] | select(.is == "bigquery") | .projectId // empty][0] // empty' malloy-config.json)
+  if [ -n "$project" ]; then
+    gcloud config set project "$project" >/dev/null 2>&1 &&
+      echo "Queries run in Google Cloud project $project."
+  fi
 }
 
 case "${1:-}" in
