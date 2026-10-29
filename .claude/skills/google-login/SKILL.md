@@ -1,12 +1,13 @@
 ---
 name: google-login
-description: Sign the person in to Google so models can be built and checked against BigQuery with their own access, from a cloud session that has no browser. Use when building against BigQuery and the session status shows no BigQuery key and no Google sign-in, or when BigQuery fails with "Unable to detect a Project Id" or "Could not load the default credentials".
+description: Optional - sign the person in to Google so models can be built and checked against BigQuery with their own access instead of the shared key, from a cloud session that has no browser. Use only when the person asks to use their own Google access, or there's no shared BigQuery key and they can't wait for one.
 ---
 
 # Google sign-in for BigQuery
 
-Building a model here reads BigQuery as the person, with their own Google
-account. Nothing is stored in the repo: the sign-in lives in this session only
+Optional. By default, BigQuery is read through the instance or with the
+shared key from the team environment. This skill instead reads BigQuery as
+the person, with their own Google account. Nothing is stored in the repo: the sign-in lives in this session only
 and ends with it.
 
 ## 1. Start the sign-in
@@ -64,6 +65,5 @@ malloyyo sql bigquery -e "select 1 as one"
 - **"User does not have bigquery.jobs.create permission in project …"**: the
   sign-in worked, but their account can't run queries in that project. Same
   fix as "Access Denied" above.
-- **Can't get it working.** Fall back to the shared read-only key described in
-  `docs/team-setup.md`: whoever manages the team environment adds it, and you
-  delete `malloy-config-local.json` so the key is used.
+- **Back to the shared key.** Delete `malloy-config-local.json`; the shared
+  key from the team environment is used again (`docs/team-setup.md`, step 5).

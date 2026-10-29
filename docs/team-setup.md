@@ -9,8 +9,8 @@ put in your own.
 
 Steps 1 and 2 need someone with the **Owner** role in your claude.ai
 organization. To check whether that's you, open claude.ai → **Admin settings**:
-if you see a **Cloud environments** page, you're an Owner. Steps 3 and 4 need
-an admin on the instance.
+if you see a **Cloud environments** page, you're an Owner. Step 3, and setting
+the key on the instance in step 4, need an admin on the instance.
 
 ## 1. Create the shared cloud environment
 
@@ -30,17 +30,17 @@ to set this up themselves.
 
    ```
    MALLOYYO_URL=https://<instance>.malloyyo.com
+   BIGQUERY_SERVICE_ACCOUNT_JSON=<the shared key, base64-encoded: step 5>
    ```
 
-   For george that's `MALLOYYO_URL=https://george.malloyyo.com`. That's
-   all: each person signs in to the instance and to Google themselves, so no
-   keys go here. (Fallback for BigQuery: step 5.)
+   For george, the first line is `MALLOYYO_URL=https://george.malloyyo.com`.
 6. Save it, then at **Admin settings → Claude Code**, make it the
    organization's **default environment**. Colleagues then get it without
    picking it.
 
-Every member can read this environment's variables, so never put a personal
-key there.
+Every member can read this environment's variables. That's why the BigQuery
+key here should be a read-only key made just for this, and never anyone's
+personal key.
 
 ## 2. Add the instance as a connector
 
@@ -68,30 +68,38 @@ Unchanged from before; on the instance, as an admin:
    webhook** (content type `application/json`, just the push event, plus the
    instance's `GITHUB_WEBHOOK_SECRET` if it has one).
 
-## 4. Decide who can build models
+## 4. How queries run
 
-- **Instance admins** can build straight from a cloud session: the instance
-  compiles their changes with its own BigQuery access and shows previews. They need
-  nothing else.
-- **Everyone else** builds with their own Google account: Claude shows them a
-  sign-in link the first time. Their Google account needs **BigQuery Data
-  Viewer** on the model's datasets and **BigQuery Job User** on the project;
-  whoever manages Google Cloud grants those.
-- People who only **ask questions** of published models need just the instance's
-  connector.
+By default, everything goes through the instance:
 
-## 5. Fallback: a shared BigQuery key
+- **Asking questions** of published models: the instance runs the query with
+  its own BigQuery key. People only need the instance's connector.
+- **Building models, as an instance admin:** the instance compiles changes and
+  shows previews with its own key (`preview_changes`).
+- **Building models, as anyone else:** Claude compiles and checks the model in
+  the session with the shared key from step 1, which is the same key the
+  instance uses.
 
-Only if Google sign-in doesn't work for your team:
+So the instance and the shared environment hold the **same** key, under the
+same name, `BIGQUERY_SERVICE_ACCOUNT_JSON`. On a Malloyyo-hosted instance, an
+instance admin sets it with
+`malloyyo cloud secrets set BIGQUERY_SERVICE_ACCOUNT_JSON -i <instance>`; on a
+self-hosted one, it's an environment variable of the server.
+
+**Optional, personal access.** Anyone can instead query BigQuery as
+themselves: Claude shows a Google sign-in link (the `google-login` skill).
+Their Google account then needs its own **BigQuery Job User** on the project
+and **BigQuery Data Viewer** on the datasets.
+
+## 5. The shared BigQuery key
 
 1. In Google Cloud, create a service account with **BigQuery Data Viewer** on
    the model's datasets and **BigQuery Job User** on the project, and download a
-   JSON key.
+   JSON key. (If the instance already has a key for this project, reuse that
+   one.)
 2. Encode it on one line: `base64 -w0 key.json` (macOS: `base64 -i key.json`).
    Pasted raw, the line breaks inside the private key get mangled and the key
    stops working.
-3. Add it to the shared environment from step 1 as
-   `BIGQUERY_SERVICE_ACCOUNT_JSON=<the base64 text>`.
-
-Everyone using the environment can read it, which is why it should be a
-read-only key made just for this.
+3. Put the base64 text in the shared environment from step 1 as
+   `BIGQUERY_SERVICE_ACCOUNT_JSON`, and on the instance under the same name
+   (step 4).

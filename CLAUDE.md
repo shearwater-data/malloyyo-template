@@ -42,10 +42,14 @@ Two ways; prefer the first when it's available.
    the **instance's own** warehouse connections and returns real numbers and
    dashboard links. No warehouse credentials are needed in this session.
 2. **Locally**, with the `malloyyo_author` server (`compile_file`, `query`),
-   `malloyyo sql`, `malloyyo lint` and `malloyyo dashboard dev`. This needs
-   access to the data in this session: for BigQuery, the person's own Google
-   sign-in (`google-login` skill) or the shared read-only key if the team
-   environment has one; for anything else, `connect-database`.
+   `malloyyo sql`, `malloyyo lint` and `malloyyo dashboard dev`, using the
+   shared read-only key the team environment provides (the same one the
+   instance uses). For other databases, `connect-database`.
+
+Questions about published data always go through the instance (`query`,
+`describe_source`), never straight to the warehouse. Only use the
+`google-login` skill (personal Google access to BigQuery) when the person asks
+for it, or when there's no shared key and they can't wait for one.
 
 Either way:
 
@@ -53,9 +57,9 @@ Either way:
   the person where their data lives, even when the request names a table.
   Offer the connections in `malloy-config.json` that aren't placeholders, plus
   "another database" and "files (CSV / Parquet)". Only then use it.
-  - `bigquery` reads `BIGQUERY_SERVICE_ACCOUNT_JSON` on the instance; keep
-    that env name. Building locally without that key uses
-    `malloy-config-local.json` from `google-login` instead.
+  - `bigquery` reads `BIGQUERY_SERVICE_ACCOUNT_JSON`, the shared key, here
+    and on the instance; keep that env name. Only a personal Google sign-in
+    uses `malloy-config-local.json` instead.
   - `duckdb` is there only for `datasets/example/`. It is not a default; don't
     pick it unless the person says their data is in files or DuckDB.
   - For another database, or when a source fails with "No connection named …",
@@ -82,7 +86,8 @@ Writing a dataset (`yo_help("repo/datasets")` has the details):
 ## Secrets
 
 Never ask for, accept or print a secret. The one exception is the single-use
-code Google shows during `google-login`, which the person pastes back.
+code Google shows during the optional `google-login`, which the person pastes
+back.
 
 - **Cloud sessions:** environment variables live on the team's cloud
   environment, which someone with the claude.ai Owner role manages. A missing

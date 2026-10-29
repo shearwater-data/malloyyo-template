@@ -12,8 +12,9 @@ yours will have its own name.
 2. Type `/start`.
 
 Claude checks what's ready and walks you through anything missing. The first
-time, that's connecting the instance with your own account (one click in Claude's
-settings), and, if you build models against BigQuery, signing in to Google.
+time, that's connecting the instance with your own account (one click in
+Claude's settings). Queries run through the instance, so there's no database
+login.
 Then tell it what you want, for example:
 
 > what's in the published data?
@@ -73,7 +74,7 @@ missing on the instance.
 | `.claude/skills/` | `start`, `google-login`, `share`, `connect-database`, and two open-source Malloy skills ([docs/malloy-skills.md](docs/malloy-skills.md)) |
 | `.claude/hooks/session-start.sh` | Installs the `malloyyo` tool if needed and tells Claude what's set up |
 | `.claude/cloud-environment-setup.sh` | Setup script for the team's cloud environment |
-| `.claude/bin/` | Helpers: the local author server, the instance sign-in header, Google sign-in |
+| `.claude/bin/` | Helpers: the local author server, the instance sign-in header, optional personal Google sign-in |
 | `.mcp.json` | `malloyyo_author` (local build tools) and `malloyyo_instance` (the instance at `MALLOYYO_URL`) |
 | `.devcontainer/` | Codespace image |
 | `malloy-config.json` | `bigquery` (reads `BIGQUERY_SERVICE_ACCOUNT_JSON`), and `duckdb` for the example only |

@@ -20,7 +20,7 @@ Work out each of these before saying anything:
 | malloyyo tools | the status block's `malloyyo CLI` line, and that `mcp__malloyyo_author__*` tools exist | a version is shown and the tools are listed |
 | The instance | which instance tools you have: a claude.ai connector (its tools are named after the connector, e.g. `mcp__george__*` for an instance named george) or the repo's `malloyyo_instance` server. Call `list_sources` on it | it answers |
 | Building on the instance | only needed to build or change models. The instance's tools include `preview_changes`, `list_repos` and `check_repo` (instance admins get them) | present: no data access is needed here, the instance compiles with its own |
-| Building locally | only if the instance can't preview for them. For each connection in `malloy-config.json` they'll use: its env names are `set` in the status block, **or** for BigQuery, `Google sign-in: active` | one of those |
+| Building locally | only if the instance can't preview for them. For each connection in `malloy-config.json` they'll use, its env names are `set` (and valid) in the status block. For BigQuery that's the shared key from the team environment | all set |
 
 Querying what's already published needs only the instance: the instance reads the
 warehouse with its own credentials. Don't ask someone who only wants answers
@@ -42,10 +42,13 @@ the first missing item:
   click, the organization hasn't added it yet: point them to step 2 of
   `docs/team-setup.md` for whoever manages Claude. After they say done, a new
   session may be needed for the tools to appear; say so if they don't.
-- **Can't build yet.** Building on the instance needs instance admin rights, which an existing
-  instance admin can grant. Otherwise build locally: for
-  BigQuery use the `google-login` skill, for other databases
-  `connect-database`.
+- **Can't build yet.** Building on the instance needs instance admin rights,
+  which an existing instance admin can grant. Building locally needs the
+  shared BigQuery key on the team environment: if the status block says it's
+  missing or not valid, the person who manages the environment adds it
+  (`docs/team-setup.md`, step 5). For other databases, `connect-database`. If
+  they'd rather not wait and have their own BigQuery access, offer the
+  `google-login` skill.
 
 ## 3. Ask what they want
 
