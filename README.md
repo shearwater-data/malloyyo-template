@@ -1,97 +1,65 @@
 # Malloyyo model template
 
-A starting point for a Malloy model repo. You build the model by talking to
-Claude, check it against real data, and publish it to your Malloyyo instance
-by merging a pull request. Each team has its own instance (for example
-**george**, **john**, **ringo** or **paul**); the examples here use george.
+A Malloy model repo you build by talking to Claude and publish to your team's
+Malloyyo instance (e.g. **george**, **john**, **ringo**, **paul**) by merging a
+pull request.
 
 ## Start here
 
-1. Open [claude.ai/code](https://claude.ai/code) and start a session on this
-   repo. If your team has a shared environment for its instance, pick it; if
-   not, your default one is fine.
-2. Copy this prompt into the session:
+Start a session on this repo at [claude.ai/code](https://claude.ai/code) (in
+your team's shared environment, if it has one) and paste:
 
-   ```text
-   Set me up to work on this Malloy model repo. Ask me which Malloyyo instance
-   I use and its address, then check everything this session needs for it
-   (the malloyyo tools, my connection to the instance, and what's needed to
-   build models). Tell me in plain steps what's missing and exactly what I
-   need to do to fix it, one thing at a time. Don't ask me to paste any keys
-   or passwords into the chat.
-   ```
+```text
+Set me up to work on this Malloy model repo. Ask me which Malloyyo instance
+I use and its address, check everything this session needs for it, and tell
+me step by step what's missing and how to fix it. Don't ask me to paste keys
+or passwords into the chat.
+```
 
-   (`/start` does the same.)
-
-Claude asks which instance you use, checks what's ready and walks you through
-anything missing. Often that's just connecting the instance with your own
-account (one click in Claude's settings), after which you can already explore
-its published data. To build models, it tells you exactly what to add to your
-session's settings. Queries run through the instance, so there's no database
-login.
-
-Then tell it what you want, for example:
+(`/start` does the same.) Claude checks the tools, your connection to the
+instance, and what building models needs, then walks you through each fix.
+Then ask for what you want:
 
 > what's in the published data?
 
 > add a dataset for our orders table, with an overview dashboard
 
-Never paste a key or password into the chat; Claude will tell you where one
-goes if it's needed.
+**First time for your organization or instance?** See
+[docs/team-setup.md](docs/team-setup.md).
 
-**First person in your organization?** Someone has to do a one-time setup
-first: [docs/team-setup.md](docs/team-setup.md).
-
-**New model repo?** On this page, **Use this template → Create a new
-repository** (don't clone it: a clone still pushes here). Name it
-`malloyyo-<usecase>`, then have an instance admin add it (team setup, step 3).
-
-## Sharing
-
-- **Results and charts:** Claude shares them as artifacts that show live
-  numbers from the instance, as a draft dashboard on the instance with a link, or saves
-  them into the model (see the `share` skill).
-- **Sessions:** share a session's link with Team visibility from its menu to
-  hand work over. It's a read-only snapshot.
-- **The model:** this repo. Changes go through pull requests.
+**New model repo?** **Use this template → Create a new repository** (don't
+clone it: a clone still pushes here), then have an instance admin add it
+(team setup, step 3).
 
 ## Publishing
 
-Claude opens a pull request; you review and merge it.
+Claude opens a pull request; merging it publishes through the repo's webhook,
+or via **Refresh from GitHub** on the repo's page on the instance. A **new**
+dataset is created once by an instance admin: **Refresh and create missing
+datasets**.
 
-- After a merge, the instance publishes it through the webhook (team setup, step 3),
-  or when someone clicks **Refresh from GitHub** on the repo's page on the instance.
-- A **new** dataset has to be created once, by an instance admin: **Refresh and
-  create missing datasets** on the repo's page.
-
-The published model reads the database with **the instance's** credentials, so every
-env name in `malloy-config.json` (such as `BIGQUERY_SERVICE_ACCOUNT_JSON`) must
-be set on the instance under the same name. If publishing fails with "Could not load
-the default credentials" followed by many "no such field" errors, that name is
-missing on the instance.
+The instance reads the database with its own credentials, so every env name in
+`malloy-config.json` (e.g. `BIGQUERY_SERVICE_ACCOUNT_JSON`) must be set on the
+instance too. "Could not load the default credentials" followed by "no such
+field" errors means one is missing there.
 
 ## Other ways to work
 
-- **Codespace:** **Code → Codespaces → Create codespace**, then run `claude` in
-  its terminal. Add `MALLOYYO_URL`, `MALLOYYO_TOKEN` (a token with the **mcp**
-  and **publish** scopes, from **Home → Tokens** on the instance) and, for
-  BigQuery, `BIGQUERY_SERVICE_ACCOUNT_JSON` as **Settings → Secrets and
-  variables → Codespaces** secrets on the repo first.
-- **Laptop:** clone the repo, `npm install -g @malloydata/malloyyo`, set
-  `MALLOYYO_URL`, and run `claude` in the repo. Claude reaches the instance
-  through its claude.ai connector, or set `MALLOYYO_TOKEN` as for a codespace.
+In a codespace or on a laptop, install `malloyyo`
+(`npm install -g @malloydata/malloyyo`; codespaces have it) and set
+`MALLOYYO_URL`, `MALLOYYO_TOKEN` (an instance token with the **mcp** and
+**publish** scopes, from **Home → Tokens**) and, for BigQuery,
+`BIGQUERY_SERVICE_ACCOUNT_JSON`: codespace secrets under **Settings → Secrets
+and variables → Codespaces**, or your shell. Then run `claude` in the repo.
 
 ## What's in the repo
 
 | Path | Purpose |
 | --- | --- |
 | `CLAUDE.md` | How Claude works in this repo |
-| `.claude/skills/` | `start`, `google-login`, `share`, `connect-database`, and two open-source Malloy skills ([docs/malloy-skills.md](docs/malloy-skills.md)) |
-| `.claude/hooks/session-start.sh` | Installs the `malloyyo` tool if needed and tells Claude what's set up |
-| `.claude/cloud-environment-setup.sh` | Setup script for the team's cloud environment |
-| `.claude/bin/` | Helpers: the setup check (`malloyyo-doctor`), the local author server, optional personal Google sign-in |
-| `.mcp.json` | `malloyyo_author` (local build tools) and `malloyyo_instance` (the instance at `MALLOYYO_URL`) |
-| `.devcontainer/` | Codespace image |
-| `malloy-config.json` | `bigquery` (reads `BIGQUERY_SERVICE_ACCOUNT_JSON`), and `duckdb` for the example only |
+| `.claude/skills/` | `start`, `share`, `connect-database`, `google-login`, and two open-source Malloy skills ([docs/malloy-skills.md](docs/malloy-skills.md)) |
+| `.claude/bin/`, `.claude/hooks/` | The setup check (`malloyyo-doctor`), run at session start; helpers |
+| `.claude/cloud-environment-setup.sh` | Setup script for a cloud environment |
+| `.mcp.json` | Local build tools, and the instance at `MALLOYYO_URL` |
+| `malloy-config.json` | Connections: `bigquery`, and `duckdb` for the example |
 | `datasets/` | One directory per dataset; `example/` is a placeholder to replace |
-| `docs/team-setup.md` | One-time setup for an organization |
