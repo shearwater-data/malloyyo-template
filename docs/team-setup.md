@@ -1,6 +1,8 @@
 # One-time team setup
 
-Do this once per Malloyyo instance. Afterwards, a colleague starts by opening
+Do this once per Malloyyo instance: a company with several teams, each on its
+own instance (george, john, ringo, paul, …), sets up one environment and one
+connector per instance. Afterwards, a colleague starts by opening
 a model repo at claude.ai/code and typing `/start`.
 
 Below, `<instance>` is your instance's name and `https://<instance>.malloyyo.com`

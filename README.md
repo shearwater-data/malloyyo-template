@@ -2,8 +2,8 @@
 
 A starting point for a Malloy model repo. You build the model by talking to
 Claude, check it against real data, and publish it to your Malloyyo instance
-by merging a pull request. The examples use an instance called **george**;
-yours will have its own name.
+by merging a pull request. Each team has its own instance (for example
+**george**, **john**, **ringo** or **paul**); the examples here use george.
 
 ## Start here
 
