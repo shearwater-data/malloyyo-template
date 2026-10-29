@@ -8,11 +8,11 @@ Copyright (c) Credible Data Inc.
 SPDX-License-Identifier: MIT
 -->
 
-> **In this repo (george / Malloyyo):** this skill comes from the open-source
+> **In this repo (Malloyyo):** this skill comes from the open-source
 > Malloy skills (`@malloy-publisher/skills` 0.1.47, MIT, see `docs/malloy-skills.md`),
 > written for Malloy Publisher. Translate as you read: `execute_query` is
-> `mcp__malloyyo_author__query` (or the george connector's `query` for published
-> models); `get_context` is `describe_source` on george, or reading the source
+> `mcp__malloyyo_author__query` (or the instance connector's `query` for published
+> models); `get_context` is `describe_source` on the instance, or reading the source
 > file; `search_malloy_docs` is `yo_help`. Document fields with `#"`, not
 > `#(doc)`. Ignore anything about Publisher packages, `publisher.json` or
 > `## artifact` reports. Where this skill and CLAUDE.md or `yo_help` disagree,

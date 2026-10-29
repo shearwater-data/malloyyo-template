@@ -20,8 +20,9 @@ SessionStart hook installs the `malloyyo` CLI if it's missing and prints a
 "Malloyyo session status" block. If someone is new or something is missing,
 use the `start` skill.
 
-The Malloyyo instance is whatever `$MALLOYYO_URL` says (ours is george); never
-assume a particular one. Reach it through:
+The Malloyyo instance is whatever `$MALLOYYO_URL` says; never assume a
+particular one, and use its name when talking to the person (george, in
+examples here). Reach it through:
 
 - **the instance's claude.ai connector** (in a cloud session; each person
   connects it once with their own account), or

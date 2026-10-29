@@ -39,7 +39,7 @@ On success it also writes `malloy-config-local.json`: the same connections as
 `malloy-config.json`, but BigQuery without the service-account key, so it uses
 the sign-in. That file **replaces** `malloy-config.json` while building here.
 `.gitignore` keeps it out of git and publish refuses it, so the published model
-still uses george's own credentials.
+still uses the instance's own credentials.
 
 ## 3. Check it, then reconnect the author tools
 
