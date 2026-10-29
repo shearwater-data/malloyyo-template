@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Starts the local malloyyo authoring server for .mcp.json. Uses the installed
+# CLI, or runs it through npx if the session's setup hasn't installed it yet.
+if command -v malloyyo >/dev/null 2>&1; then
+  exec malloyyo mcp --develop "$@"
+fi
+exec npx -y @malloydata/malloyyo mcp --develop "$@"

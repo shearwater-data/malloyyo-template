@@ -1,18 +1,13 @@
 {
   "mcpServers": {
     "malloyyo_author": {
-      "command": "malloyyo",
-      "args": [
-        "mcp",
-        "--develop"
-      ]
+      "command": ".claude/bin/malloyyo-mcp",
+      "args": []
     },
     "malloyyo_instance": {
       "type": "http",
       "url": "${MALLOYYO_URL}/mcp",
-      "headers": {
-        "Authorization": "Bearer ${MALLOYYO_TOKEN:-}"
-      }
+      "headersHelper": ".claude/bin/malloyyo-auth-headers"
     }
   }
 }

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# headersHelper for the malloyyo_instance server in .mcp.json.
+# With MALLOYYO_TOKEN set (a codespace), send it. Without it, send no
+# Authorization header, so Claude Code can sign in through the browser (OAuth).
+if [ -n "${MALLOYYO_TOKEN:-}" ]; then
+  jq -cn --arg t "$MALLOYYO_TOKEN" '{Authorization: ("Bearer " + $t)}'
+else
+  echo '{}'
+fi
