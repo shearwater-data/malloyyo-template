@@ -1,64 +1,128 @@
 ---
 name: start
-description: First stop in a new session on this model repo. Checks that the Malloyyo instance, the malloyyo tools and, for building models, Google/BigQuery are ready, walks the person through whatever is missing one step at a time, then asks what they want to do. Use when someone types /start, says hello, asks how to get going, or asks what Claude can do here.
+description: Set up and check a session on this Malloy model repo for any Malloyyo instance. Asks which instance and its URL, runs the setup check, explains in plain steps what's missing and how to fix it (including what to put in the person's cloud environment), then asks what they want to do. Use when someone types /start, pastes the README's setup prompt, says hello, asks how to get set up, or something isn't working.
 ---
 
-# Start a session
+# Set up a session
 
 The person is probably not a developer. Keep each message short, say what each
-step is for, and do one step at a time. Never show tokens, keys or env values.
+step is for, and do one step at a time. Never show tokens, keys or env values,
+and never ask for one in chat.
 
-The SessionStart hook has already printed a "Malloyyo session status" block
-into the conversation. Use it; don't re-run checks it already answers.
+There are many Malloyyo instances (one per team: george, john, ringo, paul,
+…). **Never assume one**, not even the one `MALLOYYO_URL` points to.
 
-## 1. Check, quietly
+## 1. Ask which instance
 
-Work out each of these before saying anything:
+Ask in one message:
 
-| Check | How | Ready when |
-| --- | --- | --- |
-| malloyyo tools | the status block's `malloyyo CLI` line, and that `mcp__malloyyo_author__*` tools exist | a version is shown and the tools are listed |
-| The instance | which instance tools you have: a claude.ai connector (its tools are named after the connector, e.g. `mcp__george__*` for an instance named george) or the repo's `malloyyo_instance` server. Call `list_sources` on it | it answers |
-| Building on the instance | only needed to build or change models. The instance's tools include `preview_changes`, `list_repos` and `check_repo` (instance admins get them) | present: no data access is needed here, the instance compiles with its own |
-| Building locally | only if the instance can't preview for them. For each connection in `malloy-config.json` they'll use, its env names are `set` (and valid) in the status block. For BigQuery that's the shared key from the team environment | all set |
+> Which Malloyyo instance do you use, and what's its address? For example
+> **george** at `https://george.malloyyo.com`.
 
-Querying what's already published needs only the instance: the instance reads the
-warehouse with its own credentials. Don't ask someone who only wants answers
-to sign in to Google, and don't ask someone the instance can preview for either.
+If `MALLOYYO_URL` is already set (the "Malloyyo session status" block shows
+it), offer it as the likely answer, e.g. "This session is set up for
+`https://george.malloyyo.com`; is that the one?", but still let them confirm
+or change it. If they give only a name, suggest `https://<name>.malloyyo.com`
+and confirm.
 
-## 2. Report and fix
+## 2. Check, quietly
 
-Tell the person in one short checklist what's ready and what isn't, then fix
-the first missing item:
+Run the check with their URL:
 
-- **malloyyo tools missing.** The environment's setup script didn't run or
-  failed. Tell them the team environment needs
-  `.claude/cloud-environment-setup.sh` as its setup script (the person who
-  manages it can follow `docs/team-setup.md`). Meanwhile, run
-  `npm install -g @malloydata/malloyyo` yourself and continue.
-- **Instance not connected.** Say: "Open claude.ai → Settings → Connectors, find
-  the instance's connector (named after it, e.g. **george**) and click **Connect**, sign in with your account on that instance, then come
-  back and say done. You only do this once." If there's no instance connector to
-  click, the organization hasn't added it yet: point them to step 2 of
-  `docs/team-setup.md` for whoever manages Claude. After they say done, a new
-  session may be needed for the tools to appear; say so if they don't.
-- **Can't build yet.** Building on the instance needs instance admin rights,
-  which an existing instance admin can grant. Building locally needs the
-  shared BigQuery key on the team environment: if the status block says it's
-  missing or not valid, the person who manages the environment adds it
-  (`docs/team-setup.md`, step 5). For other databases, `connect-database`. If
-  they'd rather not wait and have their own BigQuery access, offer the
-  `google-login` skill.
+```bash
+.claude/bin/malloyyo-doctor https://<instance>.malloyyo.com
+```
 
-## 3. Ask what they want
+Each line is `OK`, `MISSING`, `WARN` or `INFO`. Then check the two things the
+script can't see:
 
-Once the basics are ready, ask one question:
+- **The instance's connector.** Look for that instance's tools in this
+  session: a claude.ai connector named after it, e.g. `george` or
+  `george-malloyyo`, whose tools end in `list_sources`, `query` and so on
+  (`ToolSearch` with the instance name finds them). If there are several
+  instance connectors, use only the one for their instance. If you can't find
+  it, `ListConnectors` with the instance name says whether it exists but isn't
+  connected. Call `list_sources` on it to prove it answers. `.mcp.json`'s
+  `malloyyo_instance` is a fallback that works only with `MALLOYYO_TOKEN`.
+- **Building on the instance.** Whether its tools include `preview_changes`,
+  `list_repos` and `check_repo`; instance admins get them.
 
-> Do you want to **explore** the data that's already published on the instance, or
-> **build or change** a model?
+## 3. Report and fix
 
-- Explore: `describe_source`, then `query` on the instance. Share results the way
-  the `share` skill describes.
-- Build: follow CLAUDE.md ("How models are built here"). On the instance, run the
-  checks in `yo_help("authoring/start")` first; either way, start by asking
-  where their data lives.
+Show a short checklist, ✅ / ❌, in plain words, grouped by what it's for:
+
+- **Explore published data:** needs only the connector. This often works
+  straight away, so say so and offer it even while other things are missing.
+- **Build models:** needs the malloyyo tools, and either preview tools on the
+  instance (admins) or the shared warehouse key in this session.
+
+Then fix the first missing item:
+
+- **Connector missing or not connected.** "Open claude.ai → Settings →
+  Connectors, find **<instance>** and click **Connect**, sign in with your
+  account on that instance, then come back and say done." The tools usually
+  appear in the same session; if they don't, start a new one. If there's no
+  connector for their instance at all, someone with the claude.ai Owner role
+  adds it (`docs/team-setup.md`, step 2).
+- **Connected, but the instance refuses them** (sign-in fails, "forbidden",
+  "not authorized", or `list_sources` comes back empty or with an access
+  error). They don't have an account on that instance yet, or it doesn't
+  include them. Only an admin on that instance can fix this: tell them to ask
+  that instance's admin for access, naming the instance. Don't try to work
+  around it with another instance or a token.
+- **Instance does not answer.** The address is wrong or the instance is down.
+  Ask them to check it by opening it in their browser.
+- **malloyyo CLI missing.** Run `npm install -g @malloydata/malloyyo` yourself
+  (about a minute), then carry on.
+- **`MALLOYYO_URL`, the warehouse key, or the setup script missing.** These
+  belong in the session's settings. Where depends on the `INFO where:` line:
+  - **Claude cloud session:** a cloud environment. If they're on their team's
+    shared environment, its manager fixes it (`docs/team-setup.md`).
+    Otherwise they can set up their own: in this session's title bar, open the
+    environment menu → their environment → **Edit** (or **Add environment**,
+    named after the instance), and give them exactly this to paste:
+
+    **Setup script:**
+    ```bash
+    #!/bin/bash
+    npm install -g @malloydata/malloyyo || true
+    ```
+
+    **Environment variables** (the instance's address, filled in, plus the
+    key line only if they'll build models locally):
+    ```
+    MALLOYYO_URL=https://<instance>.malloyyo.com
+    BIGQUERY_SERVICE_ACCOUNT_JSON=<the shared read-only key, base64-encoded>
+    ```
+
+    For the key, they ask whoever manages their instance's BigQuery access for
+    the shared read-only key, and encode it on their computer (`base64 -i
+    key.json | pbcopy` on a Mac). It goes straight into the environment, never
+    into chat. A new session picks up the changes.
+  - **Codespace:** repo secrets under **Settings → Secrets and variables →
+    Codespaces**, then restart the codespace.
+  - **This computer:** `export MALLOYYO_URL=…` in their shell, and
+    `read -rs NAME && export NAME` for a key; then restart Claude.
+
+  Until they've done that, this session can still work: pass their URL to
+  commands yourself, and explore through the connector.
+- **Key set but not valid.** It was pasted raw and the line breaks in the
+  private key got mangled. Have them re-add it base64-encoded, as above.
+- **No key and no preview tools, but they want to build now.** Offer the
+  `google-login` skill (their own Google access to BigQuery) as an optional
+  stopgap.
+
+After each fix, run the check again and update the checklist.
+
+## 4. Ask what they want
+
+Once exploring (at least) works, ask:
+
+> Do you want to **explore** the data that's already published on
+> <instance>, or **build or change** a model?
+
+- Explore: `describe_source`, then `query`, on their instance's connector.
+  Share results the way the `share` skill describes.
+- Build: follow CLAUDE.md ("How models are built here"). With preview tools,
+  run the checks in `yo_help("authoring/start")` first. Either way, start by
+  asking where their data lives.

@@ -17,8 +17,9 @@ dataset compiles, delete it.
 Usually Claude Code on the web, in the team's shared cloud environment for the
 instance (see `docs/team-setup.md`); a codespace or a laptop also work. The
 SessionStart hook installs the `malloyyo` CLI if it's missing and prints a
-"Malloyyo session status" block. If someone is new or something is missing,
-use the `start` skill.
+"Malloyyo session status" block from `.claude/bin/malloyyo-doctor`. If someone
+is new, pastes the README's setup prompt, or something is missing, use the
+`start` skill.
 
 The Malloyyo instance is whatever `$MALLOYYO_URL` says; never assume a
 particular one, and use its name when talking to the person (george, in

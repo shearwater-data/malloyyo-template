@@ -7,14 +7,29 @@ by merging a pull request. Each team has its own instance (for example
 
 ## Start here
 
-1. Open [claude.ai/code](https://claude.ai/code), pick your team's environment
-   for the instance (e.g. **george**) and this repo.
-2. Type `/start`.
+1. Open [claude.ai/code](https://claude.ai/code) and start a session on this
+   repo. If your team has a shared environment for its instance, pick it; if
+   not, your default one is fine.
+2. Copy this prompt into the session:
 
-Claude checks what's ready and walks you through anything missing. The first
-time, that's connecting the instance with your own account (one click in
-Claude's settings). Queries run through the instance, so there's no database
+   ```text
+   Set me up to work on this Malloy model repo. Ask me which Malloyyo instance
+   I use and its address, then check everything this session needs for it
+   (the malloyyo tools, my connection to the instance, and what's needed to
+   build models). Tell me in plain steps what's missing and exactly what I
+   need to do to fix it, one thing at a time. Don't ask me to paste any keys
+   or passwords into the chat.
+   ```
+
+   (`/start` does the same.)
+
+Claude asks which instance you use, checks what's ready and walks you through
+anything missing. Often that's just connecting the instance with your own
+account (one click in Claude's settings), after which you can already explore
+its published data. To build models, it tells you exactly what to add to your
+session's settings. Queries run through the instance, so there's no database
 login.
+
 Then tell it what you want, for example:
 
 > what's in the published data?
@@ -74,7 +89,7 @@ missing on the instance.
 | `.claude/skills/` | `start`, `google-login`, `share`, `connect-database`, and two open-source Malloy skills ([docs/malloy-skills.md](docs/malloy-skills.md)) |
 | `.claude/hooks/session-start.sh` | Installs the `malloyyo` tool if needed and tells Claude what's set up |
 | `.claude/cloud-environment-setup.sh` | Setup script for the team's cloud environment |
-| `.claude/bin/` | Helpers: the local author server, optional personal Google sign-in |
+| `.claude/bin/` | Helpers: the setup check (`malloyyo-doctor`), the local author server, optional personal Google sign-in |
 | `.mcp.json` | `malloyyo_author` (local build tools) and `malloyyo_instance` (the instance at `MALLOYYO_URL`) |
 | `.devcontainer/` | Codespace image |
 | `malloy-config.json` | `bigquery` (reads `BIGQUERY_SERVICE_ACCOUNT_JSON`), and `duckdb` for the example only |
