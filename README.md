@@ -63,8 +63,8 @@ missing on the instance.
   BigQuery, `BIGQUERY_SERVICE_ACCOUNT_JSON` as **Settings → Secrets and
   variables → Codespaces** secrets on the repo first.
 - **Laptop:** clone the repo, `npm install -g @malloydata/malloyyo`, set
-  `MALLOYYO_URL`, run `claude` in the repo, and sign in to the instance
-  through `/mcp`.
+  `MALLOYYO_URL`, and run `claude` in the repo. Claude reaches the instance
+  through its claude.ai connector, or set `MALLOYYO_TOKEN` as for a codespace.
 
 ## What's in the repo
 
@@ -74,7 +74,7 @@ missing on the instance.
 | `.claude/skills/` | `start`, `google-login`, `share`, `connect-database`, and two open-source Malloy skills ([docs/malloy-skills.md](docs/malloy-skills.md)) |
 | `.claude/hooks/session-start.sh` | Installs the `malloyyo` tool if needed and tells Claude what's set up |
 | `.claude/cloud-environment-setup.sh` | Setup script for the team's cloud environment |
-| `.claude/bin/` | Helpers: the local author server, the instance sign-in header, optional personal Google sign-in |
+| `.claude/bin/` | Helpers: the local author server, optional personal Google sign-in |
 | `.mcp.json` | `malloyyo_author` (local build tools) and `malloyyo_instance` (the instance at `MALLOYYO_URL`) |
 | `.devcontainer/` | Codespace image |
 | `malloy-config.json` | `bigquery` (reads `BIGQUERY_SERVICE_ACCOUNT_JSON`), and `duckdb` for the example only |

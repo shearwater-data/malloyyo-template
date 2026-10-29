@@ -7,7 +7,9 @@
     "malloyyo_instance": {
       "type": "http",
       "url": "${MALLOYYO_URL}/mcp",
-      "headersHelper": ".claude/bin/malloyyo-auth-headers"
+      "headers": {
+        "Authorization": "Bearer ${MALLOYYO_TOKEN:-}"
+      }
     }
   }
 }

@@ -26,8 +26,9 @@ examples here). Reach it through:
 
 - **the instance's claude.ai connector** (in a cloud session; each person
   connects it once with their own account), or
-- **`malloyyo_instance`** from `.mcp.json`: `MALLOYYO_TOKEN` in a codespace,
-  browser sign-in through `/mcp` on a laptop.
+- **`malloyyo_instance`** from `.mcp.json`, when `MALLOYYO_TOKEN` is set (a
+  codespace, or a laptop). Without a token it shows as needing
+  authentication; ignore that and use the connector.
 
 Use whichever is connected; they're the same server.
 
