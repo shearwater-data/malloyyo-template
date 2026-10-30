@@ -14,7 +14,9 @@ There are many Malloyyo instances (one per team: george, john, ringo, paul,
 
 ## 1. Ask which instance
 
-Ask in one message:
+If the person's message already names the instance or its address (a shared
+setup link does), don't ask again: use it, say which one you're checking, and
+go on to step 2. Otherwise ask in one message:
 
 > Which Malloyyo instance do you use, and what's its address? For example
 > **george** at `https://george.malloyyo.com`.
@@ -53,6 +55,9 @@ Show a short checklist, ✅ / ❌, in plain words, grouped by what it's for:
 
 - **Explore published data:** needs only the connector. This often works
   straight away, so say so and offer it even while other things are missing.
+- **Build models on the instance (admins):** with preview tools, the instance
+  compiles with its own warehouse key, so a missing key or `MALLOYYO_URL` in
+  this session is **not** a problem. Don't list them.
 - **Build models:** needs the malloyyo tools, and either preview tools on the
   instance (admins) or the shared warehouse key in this session.
 

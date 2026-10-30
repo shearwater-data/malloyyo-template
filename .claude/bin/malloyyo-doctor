@@ -42,7 +42,7 @@ else
     echo "MISSING instance does not answer at $url (check the address)"
   fi
   if [ -z "${MALLOYYO_URL:-}" ]; then
-    echo "MISSING MALLOYYO_URL is not set (should be $url)"
+    echo "WARN MALLOYYO_URL is not set (should be $url; only needed for codespaces, laptops and publishing from the CLI)"
   elif [ "${MALLOYYO_URL%/}" != "$url" ]; then
     echo "WARN MALLOYYO_URL is ${MALLOYYO_URL%/}, not $url"
   else

@@ -24,6 +24,10 @@ Then ask for what you want:
 
 > add a dataset for our orders table, with an overview dashboard
 
+**Setting up a colleague?** Send them a link that opens this repo with the
+prompt filled in, naming your instance:
+`https://claude.ai/code?repositories=<owner/repo>&prompt=<the prompt, URL-encoded>`.
+
 **First time for your organization or instance?** See
 [docs/team-setup.md](docs/team-setup.md).
 
