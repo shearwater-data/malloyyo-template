@@ -34,10 +34,13 @@ else
     https://*) ;;
     *) echo "WARN instance URL should start with https:// ($url)" ;;
   esac
-  meta=$(curl -sS -m 10 "$url/.well-known/oauth-protected-resource" 2>/dev/null)
+  host="${url#https://}"; host="${host#http://}"; host="${host%%/*}"
+  meta=$(curl -sS -m 10 "$url/.well-known/oauth-protected-resource" 2>&1)
   if printf '%s' "$meta" | jq -e '.resource | test("/mcp$")' >/dev/null 2>&1; then
     echo "OK instance answers at $url"
     reachable=1
+  elif printf '%s' "$meta" | grep -q 'CONNECT tunnel failed, response 403'; then
+    echo "WARN this session's network settings block $host (the connector still works; add $host to the environment's allowed domains for the CLI)"
   else
     echo "MISSING instance does not answer at $url (check the address)"
   fi
@@ -85,9 +88,29 @@ fi
 if [ -f malloy-config-local.json ]; then
   echo "INFO malloy-config-local.json is present: it replaces malloy-config.json while building here"
 fi
-if command -v gcloud >/dev/null 2>&1 &&
-   gcloud auth application-default print-access-token >/dev/null 2>&1; then
-  echo "INFO personal Google sign-in is active"
+# Loading data: the team's data project, and whether the signed-in person can
+# load into it. Only a personal Google sign-in can; the shared key is read-only.
+data_project=$(jq -r '.dataProject // empty' .claude/bigquery-data.json 2>/dev/null)
+gtoken=""
+command -v gcloud >/dev/null 2>&1 &&
+  gtoken=$(gcloud auth application-default print-access-token 2>/dev/null)
+[ -n "$data_project" ] && echo "INFO data project for loading data: $data_project"
+if [ -z "$gtoken" ]; then
+  echo "INFO no Google sign-in (only needed to load data: README step 7)"
+else
+  who=$(curl -sS -m 10 "https://oauth2.googleapis.com/tokeninfo?access_token=$gtoken" 2>/dev/null | jq -r '.email // empty')
+  echo "OK Google sign-in is active${who:+ as $who}"
+  if [ -n "$data_project" ]; then
+    can=$(curl -sS -m 10 -X POST -H "Authorization: Bearer $gtoken" -H 'content-type: application/json' \
+      "https://cloudresourcemanager.googleapis.com/v1/projects/$data_project:testIamPermissions" \
+      -d '{"permissions":["bigquery.jobs.create","bigquery.datasets.create"]}' 2>/dev/null |
+      jq -r '(.permissions // []) | length')
+    if [ "$can" = "2" ]; then
+      echo "OK you can load data into $data_project"
+    else
+      echo "MISSING you can't load data into $data_project (its owner grants BigQuery Data Editor and Job User: README step 7)"
+    fi
+  fi
 fi
 
 remote=$(git remote get-url origin 2>/dev/null | sed -E 's#^.*github\.com[:/]##; s#\.git$##')

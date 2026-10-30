@@ -23,7 +23,9 @@ to set this up themselves.
 1. claude.ai → **Admin settings → Cloud environments → Add**.
 2. **Name:** the instance's name, e.g. `george`, so people can tell
    environments apart when there's more than one instance.
-3. **Network access:** Trusted (the default).
+3. **Network access:** Trusted, plus `<instance>.malloyyo.com` under **Allowed
+   domains** (with **Allow package managers** ticked), so the command line can
+   reach the instance.
 4. **Setup script:** paste the contents of
    [`.claude/cloud-environment-setup.sh`](../.claude/cloud-environment-setup.sh).
    It installs the `malloyyo` tool before each session starts. Claude saves
@@ -76,11 +78,9 @@ By default, everything goes through the instance:
 
 - **Asking questions** of published models: the instance runs the query with
   its own BigQuery key. People only need the instance's connector.
-- **Building models, as an instance admin:** the instance compiles changes and
-  shows previews with its own key (`preview_changes`).
-- **Building models, as anyone else:** Claude compiles and checks the model in
-  the session with the shared key from step 1, which is the same key the
-  instance uses.
+- **Building models:** Claude compiles and checks the model in the session
+  with the shared key from step 1, which is the same key the instance uses,
+  then opens a pull request; merging it publishes.
 
 So the instance and the shared environment hold the **same** key, under the
 same name, `BIGQUERY_SERVICE_ACCOUNT_JSON`. On a Malloyyo-hosted instance, an
@@ -105,3 +105,33 @@ and **BigQuery Data Viewer** on the datasets.
 3. Put the base64 text in the shared environment from step 1 as
    `BIGQUERY_SERVICE_ACCOUNT_JSON`, and on the instance under the same name
    (step 4).
+
+## 6. A data project for loading data
+
+*Taxman*: the shared key is read-only, so loaded data lives in a project the
+team owns, with its own billing. Done once, by someone who can create projects
+in your Google Cloud organization (Claude can do it with their Google
+sign-in):
+
+1. Create the project (for george: `shearwater-malloyo-george`), link a
+   billing account, and turn on the BigQuery API.
+2. Give each person who loads data **BigQuery Data Editor** and **BigQuery Job
+   User** on the project.
+3. Record it in the repo as `.claude/bigquery-data.json` (the template ships
+   without one; `bq-data` says so until it exists). For george:
+
+   ```json
+   {
+     "dataProject": "shearwater-malloyo-george",
+     "location": "US",
+     "instanceServiceAccount": "malloyyo-shearwater@shearwaterdata-dev-1.iam.gserviceaccount.com",
+     "labels": { "team": "shearwater", "instance": "george" }
+   }
+   ```
+
+   `instanceServiceAccount` is the `client_email` of the instance's key.
+
+Datasets are then created with `.claude/bin/bq-data` (the `bigquery-data`
+skill), which gives the instance's service account read access to each one,
+so published models can read them. *Eleanor Rigby*: all the lonely tables,
+where do they all come from? Every table and column gets a description.

@@ -35,25 +35,22 @@ Use whichever is connected; they're the same server.
 
 ## How models are built here
 
-Two ways; prefer the first when it's available.
+In this session, with the `malloyyo_author` server (`compile_file`, `query`),
+`malloyyo sql`, `malloyyo lint` and `malloyyo dashboard dev`, using the shared
+read-only key from the environment (the same one the instance uses). For other
+databases, `connect-database`. The instance's connector is read-only: it
+queries what's published and saves draft dashboards, but can't add or change
+datasets. Those go through a pull request.
 
-1. **Preview on the instance.** If the instance's tools include
-   `preview_changes`, `list_repos` and `check_repo` (instance admins get them),
-   follow `yo_help("authoring/start")`: explore with `list_tables` /
-   `describe_table`, edit files here, and `preview_changes` compiles them with
-   the **instance's own** warehouse connections and returns real numbers and
-   dashboard links. No warehouse credentials are needed in this session.
-2. **Locally**, with the `malloyyo_author` server (`compile_file`, `query`),
-   `malloyyo sql`, `malloyyo lint` and `malloyyo dashboard dev`, using the
-   shared read-only key the team environment provides (the same one the
-   instance uses). For other databases, `connect-database`.
+Loading new data into BigQuery (creating datasets or tables) uses the
+`bigquery-data` skill: it runs as the person, after a Google sign-in, in the
+team's data project from `.claude/bigquery-data.json`, never with the shared
+key.
 
 Questions about published data always go through the instance (`query`,
-`describe_source`), never straight to the warehouse. Only use the
-`google-login` skill (personal Google access to BigQuery) when the person asks
-for it, or when there's no shared key and they can't wait for one.
-
-Either way:
+`describe_source`), never straight to the warehouse. Use the `google-login`
+skill (personal Google access to BigQuery) for loading data, when the person
+asks for it, or when there's no shared key and they can't wait for one.
 
 - **Never assume a connection.** Before exploring or writing any source, ask
   the person where their data lives, even when the request names a table.
