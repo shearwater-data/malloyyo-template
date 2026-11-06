@@ -2,6 +2,14 @@
 
 Research date: 2026-10-30. Verification legend: **[V]** checked against a primary source in this session, **[S]** secondary or third-party source only, **[U]** unverified inference.
 
+> **Status (2026-10-30):** the instance-side authoring tools this note builds
+> on (`preview_changes`, `list_tables`, `check_repo`, `publish_repo`, branch
+> previews) sit behind the server setting `REPO_AUTHORING`, which is off on
+> george and which george's operator plans to remove. Assume they are **not
+> available**. Model work stays in Claude Code: compile and query locally with
+> `malloyyo_author`, preview dashboards with `malloyyo dashboard dev`, and
+> publish by merging a pull request. The design below is kept as background.
+
 ## TL;DR
 
 - **Today, from a claude.ai chat, a team can query published models (the read-only connector) and nothing more.** Authoring needs Claude Code because of git, a local compiler and a warehouse key.

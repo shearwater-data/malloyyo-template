@@ -30,19 +30,21 @@ loads public data into BigQuery, models it in Malloy, and finds a few
 insights:
 
 ```text
-Hello George. Load Our World in Data's CO2 dataset
+Hello George, from <your first name>. Load Our World in Data's CO2 dataset
 (https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-data.csv)
-into the BigQuery dataset malloyo_hello_george in our data project, as a
-table with a proper schema, using the codebook
+into a BigQuery dataset in our data project, as the table
+owid_co2_<your first name>, with a proper schema, using the codebook
 (https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-codebook.csv)
-for the column descriptions. Model it in Malloy as datasets/hello_george/,
-check the numbers, then give me 2 or 3 insights, each with a chart, in one
-Claude artifact. Open a pull request; don't merge it.
+for the column descriptions. Model it in Malloy as
+datasets/hello_george_<your first name>/, check the numbers, then give me 2 or
+3 insights, each with a chart, in one Claude artifact. Open a pull request;
+don't merge it.
 ```
 
-It needs the setup steps below, including step 7 (loading data). After the pull
-request is merged, an instance admin runs **Refresh and create missing
-datasets** once, and `hello_george` appears on the instance. *Here comes the
+It needs the setup steps below, including step 7 (loading data). Using your
+name keeps test runs from clashing. To publish one, merge its pull request;
+a new dataset then needs an instance admin to run **Refresh and create missing
+datasets** once (if that seems to do nothing, see "Publishing"). *Here comes the
 sun.*
 
 ## Setup steps
@@ -146,6 +148,10 @@ clone it: a clone still pushes here), then have an instance admin add it
 or via **Refresh from GitHub** on the repo's page on the instance. A **new**
 dataset is created once by an instance admin: **Refresh and create missing
 datasets**.
+
+**Refresh** fails silently. If a dataset doesn't appear, ask Claude to run
+`malloyyo publish -i "$MALLOYYO_URL" --repo <owner/repo> --create-datasets`
+and read the error.
 
 The instance reads the database with its own credentials, so every env name in
 `malloy-config.json` (e.g. `BIGQUERY_SERVICE_ACCOUNT_JSON`) must be set on the

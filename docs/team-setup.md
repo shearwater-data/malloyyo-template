@@ -83,8 +83,10 @@ By default, everything goes through the instance:
   then opens a pull request; merging it publishes.
 
 So the instance and the shared environment hold the **same** key, under the
-same name, `BIGQUERY_SERVICE_ACCOUNT_JSON`. On a Malloyyo-hosted instance, an
-instance admin sets it with
+same name, `BIGQUERY_SERVICE_ACCOUNT_JSON`, **base64-encoded in both places**
+(pasted raw, the private key's line breaks get mangled; on the instance that
+shows up as `import reference failure`). On a Malloyyo-hosted instance, an
+instance admin sets it on the instance's settings page, or with
 `malloyyo cloud secrets set BIGQUERY_SERVICE_ACCOUNT_JSON -i <instance>`; on a
 self-hosted one, it's an environment variable of the server.
 

@@ -77,6 +77,8 @@ Writing a dataset (`yo_help("repo/datasets")` has the details):
 - Give every exported source a one-sentence `#"` and `#(agent)` lines on how to
   query it, and each measure a `#"`. People and Claude read these in
   `describe_source`.
+- Columns named like Malloy keywords (`year`, `month`, `date`, `source`, …)
+  need backticks: `` `year` ``.
 - Charts: `yo_help("explore/charting-results")` and `dashboards/charts`.
 - `malloy-gotchas-modeling` and `malloy-queries` are open-source Malloy skills
   (`docs/malloy-skills.md`) for compile errors and query habits. Where they
@@ -117,5 +119,11 @@ repo (named views, dashboards) for anything people will ask again.
   `malloyyo publish -i "$MALLOYYO_URL" --repo <owner/name> --create-datasets`
   (run `--dry-run` first and show the person what would be sent; the repo has
   no publish target in `malloy-config.json`, so always pass `-i`).
+- If **Refresh** appears to do nothing, run that command (without
+  `--dry-run`) to see the real error: the button fails silently. Add
+  `--skip-lint` when this session has no BigQuery key; the instance then does
+  the compile with its own. "Could not load the default credentials" means the
+  instance has no `BIGQUERY_SERVICE_ACCOUNT_JSON`; `import reference failure`
+  usually means it was pasted raw: store it base64-encoded.
 - The CLI reads `MALLOYYO_TOKEN` from the environment. `malloyyo login` is for
   laptops only; never run it in a codespace or cloud session.
