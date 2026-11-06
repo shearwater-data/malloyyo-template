@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Per-person Google sign-in for building models against BigQuery from a cloud
+# session, where there's no browser. See .claude/skills/google-login/SKILL.md.
+#
+#   google-login start         print a Google sign-in link (waits 10 min for a code)
+#   google-login finish CODE   hand over the code from the browser, then write
+#                              malloy-config-local.json
+#   google-login local-config  (re)write malloy-config-local.json only
+#   google-login status        is a Google sign-in active?
+set -u
+cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}" || exit 1
+dir="${TMPDIR:-/tmp}/malloyyo-google-login"
+
+local_config() {
+  # malloy-config-local.json replaces malloy-config.json entirely while building
+  # here (publish refuses it, and .gitignore keeps it out of git). Same
+  # connections, but BigQuery without the service-account key, so it uses the
+  # person's Google sign-in.
+  jq '.connections |= with_entries(
+        if .value.is == "bigquery" then .value |= del(.serviceAccountKeyJson) else . end)' \
+    malloy-config.json > malloy-config-local.json &&
+    echo "Wrote malloy-config-local.json: BigQuery now uses your Google sign-in."
+  # Without a key, BigQuery runs (and bills) queries in gcloud's default
+  # project rather than the connection's projectId, so point gcloud at it:
+  # the team's data project when there is one (people have Job User there),
+  # otherwise the connection's project.
+  project=$(jq -r '.dataProject // empty' .claude/bigquery-data.json 2>/dev/null)
+  [ -n "$project" ] ||
+    project=$(jq -r '[.connections[] | select(.is == "bigquery") | .projectId // empty][0] // empty' malloy-config.json)
+  if [ -n "$project" ]; then
+    gcloud config set project "$project" >/dev/null 2>&1 &&
+      echo "Queries run in Google Cloud project $project."
+  fi
+}
+
+case "${1:-}" in
+  start)
+    command -v gcloud >/dev/null 2>&1 || { echo "gcloud is not installed here."; exit 1; }
+    pkill -f "gcloud.*application-default login" 2>/dev/null
+    rm -rf "$dir" && mkdir -p "$dir" && mkfifo "$dir/in"
+    # Hold the pipe open so gcloud waits for the code instead of reading EOF.
+    nohup sleep 600 > "$dir/in" 2>/dev/null &
+    echo $! > "$dir/holder"
+    nohup sh -c "gcloud auth application-default login --no-launch-browser < '$dir/in' > '$dir/out' 2>&1; echo \"EXIT=\$?\" >> '$dir/out'" >/dev/null 2>&1 &
+    echo $! > "$dir/pid"
+    for _ in $(seq 1 20); do
+      url=$(grep -o 'https://accounts.google.com[^ ]*' "$dir/out" 2>/dev/null) && break
+      sleep 1
+    done
+    if [ -z "${url:-}" ]; then echo "Couldn't start the sign-in:"; cat "$dir/out"; exit 1; fi
+    echo "$url"
+    ;;
+  finish)
+    code="${2:-}"
+    [ -p "$dir/in" ] || { echo "No sign-in waiting. Run: google-login start"; exit 1; }
+    [ -n "$code" ] || { echo "Usage: google-login finish CODE"; exit 1; }
+    # The sign-in process can die if the session restarts while the person is
+    # signing in; then nothing reads the pipe and writing to it would hang.
+    if ! kill -0 "$(cat "$dir/pid" 2>/dev/null)" 2>/dev/null; then
+      echo "That sign-in expired (the session restarted while you were signing in). Run 'google-login start' for a fresh link."
+      exit 1
+    fi
+    timeout 10 sh -c "printf '%s\\n' \"\$1\" > '$dir/in'" _ "$code" || {
+      echo "Couldn't hand the code to the sign-in. Run 'google-login start' for a fresh link."; exit 1; }
+    for _ in $(seq 1 30); do grep -q '^EXIT=' "$dir/out" && break; sleep 1; done
+    kill "$(cat "$dir/holder")" 2>/dev/null
+    # gcloud can exit non-zero after saving the credentials (a follow-up quota
+    # project check), so judge by whether the sign-in works.
+    if gcloud auth application-default print-access-token >/dev/null 2>&1 &&
+       grep -q 'Credentials saved' "$dir/out"; then
+      echo "Signed in to Google."
+      local_config
+    else
+      if grep -q 'invalid_grant' "$dir/out"; then
+        echo "Google didn't accept that code: it's from a different (older) link, was already used, or was cut off when copying. Run 'google-login start' for a fresh link and use the code from that page."
+      else
+        echo "Sign-in failed:"; grep -v '^EXIT=' "$dir/out" | grep -v 'accounts.google.com' | tail -5
+      fi
+      exit 1
+    fi
+    ;;
+  local-config) local_config ;;
+  status)
+    if gcloud auth application-default print-access-token >/dev/null 2>&1; then
+      echo "Google sign-in: active"
+    else
+      echo "Google sign-in: none"; exit 1
+    fi
+    ;;
+  *) sed -n '2,10p' "$0"; exit 1 ;;
+esac

@@ -12,28 +12,58 @@ copy-paste blocks.
 the repo (it refuses one with no dataset directory). Once the first real
 dataset compiles, delete it.
 
+## Where this runs
+
+Usually Claude Code on the web, in the team's shared cloud environment for the
+instance (see `docs/team-setup.md`); a codespace or a laptop also work. The
+SessionStart hook installs the `malloyyo` CLI if it's missing and prints a
+"Malloyyo session status" block from `.claude/bin/malloyyo-doctor`. If someone
+is new, pastes the README's setup prompt, or something is missing, use the
+`start` skill.
+
+The Malloyyo instance is whatever `$MALLOYYO_URL` says; never assume a
+particular one, and use its name when talking to the person (george, in
+examples here). Reach it through:
+
+- **the instance's claude.ai connector** (in a cloud session; each person
+  connects it once with their own account), or
+- **`malloyyo_instance`** from `.mcp.json`, when `MALLOYYO_TOKEN` is set (a
+  codespace, or a laptop). Without a token it shows as needing
+  authentication; ignore that and use the connector.
+
+Use whichever is connected; they're the same server.
+
 ## How models are built here
 
-Everything is built and checked **in this container**, with the local
-`malloyyo_author` server (`compile_file`, `query`), `malloyyo sql`,
-`malloyyo lint` and `malloyyo dashboard dev`. That is the intended workflow,
-not a fallback.
+In this session, with the `malloyyo_author` server (`compile_file`, `query`),
+`malloyyo sql`, `malloyyo lint` and `malloyyo dashboard dev`, using the shared
+read-only key from the environment (the same one the instance uses). For other
+databases, `connect-database`. The instance's connector is read-only: it
+queries what's published and saves draft dashboards, but can't add or change
+datasets. Those go through a pull request.
+
+Loading new data into BigQuery (creating datasets or tables) uses the
+`bigquery-data` skill: it runs as the person, after a Google sign-in, in the
+team's data project from `.claude/bigquery-data.json`, never with the shared
+key.
+
+Questions about published data always go through the instance (`query`,
+`describe_source`), never straight to the warehouse. Use the `google-login`
+skill (personal Google access to BigQuery) for loading data, when the person
+asks for it, or when there's no shared key and they can't wait for one.
 
 - **Never assume a connection.** Before exploring or writing any source, ask
   the person where their data lives, even when the request names a table.
   Offer the connections in `malloy-config.json` that aren't placeholders, plus
   "another database" and "files (CSV / Parquet)". Only then use it.
-  - `bigquery` reads `BIGQUERY_SERVICE_ACCOUNT_JSON`; keep that env name, the
-    instance uses the same.
+  - `bigquery` reads `BIGQUERY_SERVICE_ACCOUNT_JSON`, the shared key, here
+    and on the instance; keep that env name. Only a personal Google sign-in
+    uses `malloy-config-local.json` instead.
   - `duckdb` is there only for `datasets/example/`. It is not a default; don't
     pick it unless the person says their data is in files or DuckDB.
   - For another database, or when a source fails with "No connection named …",
     use the `connect-database` skill.
-- Before modelling, check the chosen connection's secrets are set: for each
-  `{ "env": NAME }` it uses, `test -n "$NAME"` (never print the value). If one
-  is missing, `connect-database` covers how to set it.
-- Explore the data with `malloyyo sql <connection> -e "…"` against the
-  database's information schema, ask what the model should answer, then write
+- Explore the data, ask what the model should answer, then write
   `datasets/<name>/`, compile, and check the numbers with real queries.
 - Commit on a branch and open a PR. Never publish or merge without asking.
 
@@ -47,27 +77,53 @@ Writing a dataset (`yo_help("repo/datasets")` has the details):
 - Give every exported source a one-sentence `#"` and `#(agent)` lines on how to
   query it, and each measure a `#"`. People and Claude read these in
   `describe_source`.
+- Columns named like Malloy keywords (`year`, `month`, `date`, `source`, …)
+  need backticks: `` `year` ``.
+- Charts: `yo_help("explore/charting-results")` and `dashboards/charts`.
+- `malloy-gotchas-modeling` and `malloy-queries` are open-source Malloy skills
+  (`docs/malloy-skills.md`) for compile errors and query habits. Where they
+  differ from this file or `yo_help`, this file and `yo_help` win.
 
-The Malloyyo instance is whatever `$MALLOYYO_URL` says; never assume a
-particular one. Secrets are repo-level Codespaces secrets, added by hand in
-the repo's GitHub page (**Settings → Secrets and variables → Codespaces → New
-repository secret**); never set them with `gh` or another command. If
-`MALLOYYO_URL` or `MALLOYYO_TOKEN` is empty, tell the person to add it there,
-then stop and restart the codespace.
+## Secrets
 
-`malloyyo_instance` is that instance's MCP server: use it for `yo_help` and to
-query what's already published, nothing else.
+Never ask for, accept or print a secret. The one exception is the single-use
+code Google shows during the optional `google-login`, which the person pastes
+back.
+
+- **Cloud sessions:** environment variables live on the team's cloud
+  environment, which someone with the claude.ai Owner role manages. A missing
+  one goes to them (`docs/team-setup.md`), not into chat.
+- **Codespaces:** repo-level Codespaces secrets, added by hand in the repo's
+  GitHub page (**Settings → Secrets and variables → Codespaces → New
+  repository secret**); never set them with `gh` or another command. Restart
+  the codespace after adding one.
+- **Laptop:** `read -rs NAME && export NAME` in the terminal, then restart
+  Claude.
+
+## Sharing with colleagues
+
+The repo is the shared source; a merge publishes it to the instance, which is
+the shared live data. For results, charts and dashboards use the `share`
+skill: a Claude artifact with live data from the instance for quick sharing, a
+draft dashboard on the instance for a live page with a link, and Malloy in the
+repo (named views, dashboards) for anything people will ask again.
 
 ## Publishing
 
 - After the PR is merged, the instance picks it up through the repo's GitHub
   webhook, or when someone clicks **Refresh from GitHub** on the repo's page on
-  the instance. If a merge didn't show up, the webhook (README step 3) is
-  probably missing.
+  the instance. If a merge didn't show up, the webhook is probably missing
+  (`docs/team-setup.md`).
 - A **new** dataset has to be created once, by an instance admin: **Refresh and
   create missing datasets** on the repo's page, or
   `malloyyo publish -i "$MALLOYYO_URL" --repo <owner/name> --create-datasets`
   (run `--dry-run` first and show the person what would be sent; the repo has
   no publish target in `malloy-config.json`, so always pass `-i`).
-- The CLI reads `MALLOYYO_TOKEN` from the environment; never run
-  `malloyyo login` in a codespace.
+- If **Refresh** appears to do nothing, run that command (without
+  `--dry-run`) to see the real error: the button fails silently. Add
+  `--skip-lint` when this session has no BigQuery key; the instance then does
+  the compile with its own. "Could not load the default credentials" means the
+  instance has no `BIGQUERY_SERVICE_ACCOUNT_JSON`; `import reference failure`
+  usually means it was pasted raw: store it base64-encoded.
+- The CLI reads `MALLOYYO_TOKEN` from the environment. `malloyyo login` is for
+  laptops only; never run it in a codespace or cloud session.

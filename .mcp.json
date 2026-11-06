@@ -1,11 +1,8 @@
 {
   "mcpServers": {
     "malloyyo_author": {
-      "command": "malloyyo",
-      "args": [
-        "mcp",
-        "--develop"
-      ]
+      "command": ".claude/bin/malloyyo-mcp",
+      "args": []
     },
     "malloyyo_instance": {
       "type": "http",

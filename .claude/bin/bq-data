@@ -1,0 +1,270 @@
+#!/usr/bin/env python3
+"""Create BigQuery datasets and load tables the documented way, as the
+signed-in person (Google sign-in from .claude/bin/google-login).
+
+  bq-data create-dataset NAME --description TEXT [--label k=v ...]
+  bq-data load DATASET.TABLE FILE_OR_URL --schema SCHEMA.json --description TEXT
+          [--label k=v ...] [--replace]
+  bq-data describe DATASET[.TABLE]
+
+Settings come from .claude/bigquery-data.json (dataProject, location,
+instanceServiceAccount, labels). A schema file is a JSON list of
+{"name", "type", "description"} (optional "mode"); every column needs a
+description. New datasets get read access for the instance's service account,
+so the published model can read them. See .claude/skills/bigquery-data/.
+"""
+import argparse, json, os, re, subprocess, sys, tempfile, time, urllib.error, urllib.request
+
+API = "https://bigquery.googleapis.com/bigquery/v2"
+UPLOAD = "https://bigquery.googleapis.com/upload/bigquery/v2"
+NAME = re.compile(r"^[a-z][a-z0-9_]{2,}$")
+
+
+def die(msg):
+    sys.exit(f"bq-data: {msg}")
+
+
+def root():
+    d = os.environ.get("CLAUDE_PROJECT_DIR")
+    if d:
+        return d
+    try:
+        return subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip()
+    except Exception:
+        return os.getcwd()
+
+
+def settings():
+    path = os.path.join(root(), ".claude", "bigquery-data.json")
+    if not os.path.exists(path):
+        die(".claude/bigquery-data.json is missing (see docs/team-setup.md, data project)")
+    with open(path) as f:
+        return json.load(f)
+
+
+def token():
+    try:
+        return subprocess.check_output(
+            ["gcloud", "auth", "application-default", "print-access-token"],
+            text=True, stderr=subprocess.DEVNULL).strip()
+    except Exception:
+        die("no Google sign-in in this session; use the google-login skill first")
+
+
+def call(method, url, body=None, raw=None, headers=None):
+    h = {"Authorization": f"Bearer {token()}"}
+    if headers:
+        h.update(headers)
+    data = raw
+    if body is not None:
+        data = json.dumps(body).encode()
+        h["Content-Type"] = "application/json"
+    req = urllib.request.Request(url, data=data, method=method, headers=h)
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            text = r.read().decode()
+            return json.loads(text) if text else {}, r.headers
+    except urllib.error.HTTPError as e:
+        try:
+            msg = json.loads(e.read().decode())["error"]["message"]
+        except Exception:
+            msg = str(e)
+        return {"_error": e.code, "_message": msg}, None
+
+
+def labels(cfg, extra):
+    out = dict(cfg.get("labels", {}))
+    for kv in extra or []:
+        k, _, v = kv.partition("=")
+        out[k.strip().lower()] = v.strip().lower()
+    return out
+
+
+def grant_reader(cfg, project, dataset):
+    sa = cfg.get("instanceServiceAccount")
+    if not sa:
+        return
+    ds, _ = call("GET", f"{API}/projects/{project}/datasets/{dataset}")
+    access = ds.get("access", [])
+    if any(a.get("userByEmail") == sa for a in access):
+        return
+    access.append({"role": "READER", "userByEmail": sa})
+    res, _ = call("PATCH", f"{API}/projects/{project}/datasets/{dataset}", {"access": access})
+    if "_error" in res:
+        print(f"WARN couldn't give the instance read access: {res['_message']}")
+    else:
+        print(f"OK the instance ({sa}) can read {dataset}")
+
+
+def create_dataset(a, cfg):
+    if not NAME.match(a.name):
+        die(f"dataset name '{a.name}': use lowercase letters, digits and underscores")
+    if len(a.description) < 20:
+        die("give the dataset a real description: what it holds, why, and where the data comes from")
+    p = cfg["dataProject"]
+    body = {"datasetReference": {"projectId": p, "datasetId": a.name},
+            "location": cfg.get("location", "US"),
+            "description": a.description, "labels": labels(cfg, a.label)}
+    res, _ = call("POST", f"{API}/projects/{p}/datasets", body)
+    if res.get("_error") == 409:
+        upd, _ = call("PATCH", f"{API}/projects/{p}/datasets/{a.name}",
+                      {"description": a.description, "labels": body["labels"]})
+        if "_error" in upd:
+            die(f"{p}.{a.name} exists, and its description couldn't be updated: {upd['_message']}")
+        print(f"OK {p}.{a.name} already existed; description and labels updated")
+    elif "_error" in res:
+        die(f"couldn't create {p}.{a.name}: {res['_message']}")
+    else:
+        print(f"OK created {p}.{a.name} ({body['location']})")
+    grant_reader(cfg, p, a.name)
+
+
+def check_schema(path):
+    with open(path) as f:
+        schema = json.load(f)
+    if isinstance(schema, dict):
+        schema = schema.get("fields", [])
+    problems = []
+    for col in schema:
+        n = col.get("name", "")
+        if not NAME.match(n) and not re.match(r"^[a-z][a-z0-9_]*$", n):
+            problems.append(f"column '{n}': use snake_case")
+        if not col.get("type"):
+            problems.append(f"column '{n}': no type")
+        if len(col.get("description", "").strip()) < 5:
+            problems.append(f"column '{n}': no description")
+    if problems:
+        die("schema isn't ready:\n  " + "\n  ".join(problems))
+    return schema
+
+
+CHUNK = 8 * 1024 * 1024  # resumable uploads need multiples of 256 KiB
+
+
+def upload(location, path):
+    """Resumable upload in chunks, printing progress so a long upload never looks stalled."""
+    size = os.path.getsize(path)
+    sent = 0
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(CHUNK)
+            end = sent + len(chunk) - 1
+            last = sent + len(chunk) >= size
+            hdr = {"Content-Type": "application/octet-stream",
+                   "Content-Range": f"bytes {sent}-{end}/{size}" if chunk else f"bytes */{size}"}
+            req = urllib.request.Request(location, data=chunk, method="PUT",
+                                         headers={"Authorization": f"Bearer {token()}", **hdr})
+            try:
+                with urllib.request.urlopen(req, timeout=300) as r:
+                    body = r.read().decode()
+                    print(f"... uploaded {size} of {size} bytes", flush=True)
+                    return json.loads(body)
+            except urllib.error.HTTPError as e:
+                if e.code != 308:
+                    try:
+                        msg = json.loads(e.read().decode())["error"]["message"]
+                    except Exception:
+                        msg = str(e)
+                    die(f"upload failed: {msg}")
+            sent += len(chunk)
+            print(f"... uploaded {sent} of {size} bytes ({100 * sent // size}%)", flush=True)
+            if last:
+                die("upload ended without a load job; try again")
+
+
+def load(a, cfg):
+    p = cfg["dataProject"]
+    dataset, _, table = a.target.partition(".")
+    if not table or not NAME.match(dataset) or not NAME.match(table):
+        die("target must be DATASET.TABLE, lowercase with underscores")
+    if len(a.description) < 20:
+        die("give the table a real description: what one row is, the source URL, and when it was retrieved")
+    schema = check_schema(a.schema)
+    src = a.file
+    if re.match(r"^https?://", src):
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(src.split("?")[0])[1])
+        urllib.request.urlretrieve(src, tmp.name)
+        src = tmp.name
+    ext = os.path.splitext(src)[1].lower()
+    fmt = {".csv": "CSV", ".jsonl": "NEWLINE_DELIMITED_JSON", ".json": "NEWLINE_DELIMITED_JSON",
+           ".parquet": "PARQUET"}.get(ext)
+    if not fmt:
+        die(f"don't know how to load '{ext}' files (csv, jsonl, parquet)")
+    conf = {"destinationTable": {"projectId": p, "datasetId": dataset, "tableId": table},
+            "sourceFormat": fmt, "schema": {"fields": schema},
+            "writeDisposition": "WRITE_TRUNCATE" if a.replace else "WRITE_EMPTY",
+            "createDisposition": "CREATE_IF_NEEDED"}
+    if fmt == "CSV":
+        conf.update({"skipLeadingRows": 1, "allowQuotedNewlines": True})
+    res, hdrs = call("POST", f"{UPLOAD}/projects/{p}/jobs?uploadType=resumable",
+                     {"configuration": {"load": conf}, "jobReference": {"projectId": p,
+                      "location": cfg.get("location", "US")}},
+                     headers={"X-Upload-Content-Type": "application/octet-stream"})
+    if "_error" in res:
+        die(f"couldn't start the load: {res['_message']}")
+    job = upload(hdrs["Location"], src)
+    jid = job["jobReference"]["jobId"]
+    loc = job["jobReference"].get("location", cfg.get("location", "US"))
+    deadline = time.time() + 900
+    while job.get("status", {}).get("state") != "DONE":
+        if time.time() > deadline:
+            die(f"load job {jid} still running after 15 minutes; check it with: bq-data describe {a.target}")
+        time.sleep(3)
+        job, _ = call("GET", f"{API}/projects/{p}/jobs/{jid}?location={loc}")
+        print(f"... load job {job.get('status', {}).get('state', '?').lower()}", flush=True)
+    err = job["status"].get("errorResult")
+    if err:
+        details = "; ".join(e.get("message", "") for e in job["status"].get("errors", [])[:5])
+        die(f"load failed: {err.get('message')} {details}")
+    res, _ = call("PATCH", f"{API}/projects/{p}/datasets/{dataset}/tables/{table}",
+                  {"description": a.description, "labels": labels(cfg, a.label)})
+    if "_error" in res:
+        print(f"WARN loaded, but couldn't set the description: {res['_message']}")
+    rows = job.get("statistics", {}).get("load", {}).get("outputRows", "?")
+    print(f"OK loaded {rows} rows into {p}.{dataset}.{table}")
+    grant_reader(cfg, p, dataset)
+
+
+def describe(a, cfg):
+    p = cfg["dataProject"]
+    dataset, _, table = a.target.partition(".")
+    if table:
+        t, _ = call("GET", f"{API}/projects/{p}/datasets/{dataset}/tables/{table}")
+        if "_error" in t:
+            die(t["_message"])
+        print(f"{p}.{dataset}.{table}: {t.get('numRows', '?')} rows")
+        print(f"  description: {t.get('description') or 'MISSING'}")
+        for c in t.get("schema", {}).get("fields", []):
+            print(f"  {c['name']} {c['type']}: {c.get('description') or 'MISSING description'}")
+    else:
+        d, _ = call("GET", f"{API}/projects/{p}/datasets/{dataset}")
+        if "_error" in d:
+            die(d["_message"])
+        print(f"{p}.{dataset} ({d.get('location')}): {d.get('description') or 'MISSING description'}")
+        print(f"  labels: {d.get('labels', {})}")
+        sa = cfg.get("instanceServiceAccount")
+        print(f"  instance can read: {'yes' if any(x.get('userByEmail') == sa for x in d.get('access', [])) else 'NO'}")
+        ts, _ = call("GET", f"{API}/projects/{p}/datasets/{dataset}/tables")
+        for t in ts.get("tables", []):
+            print(f"  table {t['tableReference']['tableId']}")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    c = sub.add_parser("create-dataset")
+    c.add_argument("name"); c.add_argument("--description", required=True)
+    c.add_argument("--label", action="append")
+    l = sub.add_parser("load")
+    l.add_argument("target"); l.add_argument("file")
+    l.add_argument("--schema", required=True); l.add_argument("--description", required=True)
+    l.add_argument("--label", action="append"); l.add_argument("--replace", action="store_true")
+    d = sub.add_parser("describe")
+    d.add_argument("target")
+    a = ap.parse_args()
+    cfg = settings()
+    {"create-dataset": create_dataset, "load": load, "describe": describe}[a.cmd](a, cfg)
+
+
+if __name__ == "__main__":
+    main()

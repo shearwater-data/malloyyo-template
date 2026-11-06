@@ -1,6 +1,6 @@
 ---
 name: connect-database
-description: Connect this model repo to a database (BigQuery, MotherDuck, Postgres, Snowflake, Databricks, MySQL, Trino, Presto, or DuckDB files) from inside a codespace. Use when someone wants to model data that isn't in the repo, asks to "connect to" or "set up" a warehouse, or a source fails with "No connection named …". Writes the connection into malloy-config.json with secrets as env references only, and walks the user through setting those secrets as Codespaces secrets without ever pasting them into chat.
+description: Connect this model repo to a database (BigQuery, MotherDuck, Postgres, Snowflake, Databricks, MySQL, Trino, Presto, or DuckDB files) from a cloud session, codespace or laptop. Use when someone wants to model data that isn't in the repo, asks to "connect to" or "set up" a warehouse, or a source fails with "No connection named …". Writes the connection into malloy-config.json with secrets as env references only, and walks the user through getting those secrets set where this session runs, without ever pasting them into chat.
 ---
 
 # Connect a database
@@ -12,7 +12,8 @@ same name must work in both places.
 
 **Never ask for, accept, echo or write a secret value.** Not in chat, not in a
 file, not in a command. If the user pastes one, tell them to rotate it. Secrets
-reach this environment only as Codespaces secrets or a shell `read -s`.
+reach a session only as variables on the team's cloud environment, Codespaces
+secrets, or a shell `read -s`.
 
 ## 1. Ask what they're connecting to
 
@@ -30,14 +31,15 @@ errors. Tell the person which name the admin needs to have on the instance.
 
 ## 2. Write the connection
 
-Read `yo_help("connection-setup")` and the per-connector properties at
+Read `yo_help("develop/connection-setup")` and the per-connector properties at
 <https://docs.malloydata.dev/documentation/setup/config> before writing; don't
 write property names from memory.
 
 - **BigQuery is already set up.** The template ships a `bigquery` connection
-  (project `shearwaterdata-dev-1`) that reads `BIGQUERY_SERVICE_ACCOUNT_JSON`,
-  the key the codespace's create page asks for. Don't rename that env name. If
-  `test -n "$BIGQUERY_SERVICE_ACCOUNT_JSON"` passes, skip step 3. If the data
+  (project `shearwaterdata-dev-1`) that reads `BIGQUERY_SERVICE_ACCOUNT_JSON`
+  on the instance. Don't rename that env name. To build here, either that key
+  is set in this session (`test -n "$BIGQUERY_SERVICE_ACCOUNT_JSON"`) or the
+  person signs in with Google (`google-login` skill); either way, skip step 3. If the data
   is in another project, change only `projectId`; the key's own project is
   `echo "$BIGQUERY_SERVICE_ACCOUNT_JSON" | jq -r .project_id` (prints only
   that field).
@@ -52,14 +54,21 @@ Common shapes (check the docs for the rest):
 
 | Database | Connection | Secret |
 | --- | --- | --- |
-| BigQuery | `"is": "bigquery"`, `"projectId"`, `"serviceAccountKeyJson": { "env": … }` | the whole service-account JSON, minified |
+| BigQuery | `"is": "bigquery"`, `"projectId"`, `"serviceAccountKeyJson": { "env": … }` | the whole service-account JSON, base64-encoded (`base64 -w0 key.json`) so line breaks in the private key survive |
 | MotherDuck | `"is": "duckdb"`, `"databasePath": "md:<database>"` | `MOTHERDUCK_TOKEN` (read by DuckDB itself; no property needed) |
 | Postgres | `"is": "postgres"`, host / port / database / username, `"password": { "env": … }` | the password |
 | Snowflake, Databricks, … | see the docs | per connector |
 
-## 3. Get the secret into the codespace
+## 3. Get the secret into the session
 
-Give the user both options, in this order, and tell them which env names to use.
+Tell the person which env names are needed, then the option for where they work.
+
+**Claude on the web (the team environment).** The secret goes on the team's
+cloud environment as a variable, which only someone with the claude.ai Owner
+role can change. Tell the person the env name and point that person to
+`docs/team-setup.md`. A new session picks it up.
+
+**A codespace or a laptop.** Give both options, in this order.
 
 **To use it right now** (lasts until the codespace stops). In the terminal
 outside Claude, then restart Claude so the MCP server picks it up:

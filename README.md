@@ -1,133 +1,183 @@
 # Malloyyo model template
 
-A starting point for a Malloy model repo that opens as a GitHub Codespace with
-Claude Code, the `malloyyo` CLI and the Malloy extension already installed. You
-connect your database, build the model with Claude inside the codespace, and
-publish it to your Malloyyo instance.
+A Malloy model repo you build by talking to Claude and publish to your team's
+Malloyyo instance (e.g. **george**, **john**, **ringo**, **paul**) by merging a
+pull request. *All together now.*
 
-## Set up
+## Start here
 
-### 1. Create the repo
+Start a session on this repo at [claude.ai/code](https://claude.ai/code) and
+paste (or type `/start`):
 
-On this page, **Use this template → Create a new repository**. Don't clone the
-template: a clone still pushes to it. A name like `malloyyo-<usecase>`,
-lowercase with plain dashes, keeps model repos easy to find.
+```text
+Set me up to work on this Malloy model repo. Ask me which Malloyyo instance
+I use and its address, check everything this session needs for it, and tell
+me step by step what's missing and how to fix it. Don't ask me to paste keys
+or passwords into the chat.
+```
 
-### 2. Give Malloyyo a GitHub token (private repos)
+Claude checks your session and tells you which of the steps below you need,
+in order. Most people need only some of them, once.
 
-Malloyyo reads the model from GitHub, so for a private repo the instance needs
-a token that can read it. It's one token for the whole instance, so if it's
-already set, skip this step.
+To set up a colleague, send them a link that opens this repo with the prompt
+filled in:
+`https://claude.ai/code?repositories=<owner/repo>&prompt=<the prompt, URL-encoded>`.
 
-1. GitHub → your avatar → **Settings → Developer settings → Personal access
-   tokens → Fine-grained tokens → Generate new token**.
-2. **Token name**: e.g. `malloyyo <instance>`. **Expiration**: your choice;
-   when it expires, private repos stop refreshing until it's replaced.
-3. **Resource owner**: the account or organization that owns your model repos.
-   An organization may need to approve the token before it works.
-4. **Repository access**: **All repositories**, so new model repos work without
-   editing the token, or **Only select repositories** if you prefer to list
-   them.
-5. **Permissions → Repository permissions → Contents: Read-only**. GitHub adds
-   Metadata: Read-only on its own. Nothing else is needed.
-6. **Generate token** and copy it (it starts with `github_pat_`).
-7. Have the instance's admin set it as the instance's `GITHUB_TOKEN`. On a
-   Malloyyo-hosted instance that's
-   `malloyyo cloud secrets set GITHUB_TOKEN -i <instance>`; on a self-hosted
-   one, it's an environment variable of the server.
+## Hello George
 
-### 3. Add the repo to Malloyyo
+*You say goodbye, and I say hello.* Once you're set up, this end-to-end test
+loads public data into BigQuery, models it in Malloy, and finds a few
+insights:
 
-On the instance, go to **Home → Admin → General → + Add Malloy model from
-GitHub**, and enter `<owner>/<repo>` with branch `main`. This needs an instance
-admin. It works straight away because the template ships
-`datasets/example/`, a tiny placeholder dataset; delete it once your own
-dataset exists.
+```text
+Hello George, from <your first name>. Load Our World in Data's CO2 dataset
+(https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-data.csv)
+into a BigQuery dataset in our data project, as the table
+owid_co2_<your first name>, with a proper schema, using the codebook
+(https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-codebook.csv)
+for the column descriptions. Model it in Malloy as
+datasets/hello_george_<your first name>/, check the numbers, then give me 2 or
+3 insights, each with a chart, in one Claude artifact. Open a pull request;
+don't merge it.
+```
 
-To have every merge to `main` publish on its own, open the repo's page on the
-instance, copy the **webhook payload URL** shown there
-(`https://<instance>/api/repos/<id>/webhook/github`), and in the GitHub repo add
-it under **Settings → Webhooks → Add webhook**: content type
-`application/json`, **Just the push event**, **Active**. If the instance has a
-`GITHUB_WEBHOOK_SECRET`, put the same value in the **Secret** field.
+It needs the setup steps below, including step 7 (loading data). Using your
+name keeps test runs from clashing. To publish one, merge its pull request;
+a new dataset then needs an instance admin to run **Refresh and create missing
+datasets** once (if that seems to do nothing, see "Publishing"). *Here comes the
+sun.*
 
-### 4. Add the repo secrets
+## Setup steps
 
-First, create the Malloyyo token. On the instance, go to **Home → Tokens**
-and create one:
+Examples use the **george** instance (`https://george.malloyyo.com`); use your
+instance's name and address. Steps 3 to 6 are in your cloud environment's
+settings: in a session, open the environment menu in the title bar, then
+**Edit**. If your team shares an environment, whoever manages it does these
+([docs/team-setup.md](docs/team-setup.md)).
 
-- **Name**: what it's for, e.g. `<repo> codespace`.
-- **Scopes**: tick both **mcp** (lets Claude query the instance) and
-  **publish** (lets the CLI publish).
-- **Expires**: your choice. When it expires, Claude and publishing stop
-  working until you replace the secret.
+### Step 1: Connect your instance
 
-The token is shown **only once**, as a line like
-`export MALLOYYO_TOKEN=myo_main_…`. Copy just the part from `myo_` onwards.
+*Come together, right now.* claude.ai → **Settings → Connectors** → your
+instance (e.g. **george-malloyyo**) → **Connect**, and sign in with your
+account on it. Then set its tools to **Always allow**, so Claude doesn't stop
+to ask each time. If it isn't listed, a claude.ai Owner adds it
+([team setup, step 2](docs/team-setup.md#2-add-the-instance-as-a-connector)).
 
-Then, in the GitHub repo, **Settings → Secrets and variables → Codespaces →
-New repository secret**, once for each:
+### Step 2: Get access on the instance
 
-| Secret | Needed? | Value |
-| --- | --- | --- |
-| `MALLOYYO_URL` | Yes | The instance's address, e.g. `https://yourcompany.malloyyo.com`, no trailing slash |
-| `MALLOYYO_TOKEN` | Yes | The token you just copied, starting with `myo_` |
-| `BIGQUERY_SERVICE_ACCOUNT_JSON` | Only for BigQuery | The whole service-account key file |
+*Help! I need somebody.* If the instance refuses you, ask one of its admins
+for an account.
 
-Every codespace on the repo gets them, so add them before opening one; a
-running codespace picks up changes after a stop and restart. They're shared by
-everyone who uses the repo, so `MALLOYYO_TOKEN` acts as whoever created it.
+### Step 3: Let your environment reach the instance
 
-### 5. Open a codespace
+*The long and winding road.* **Network access** → add under **Allowed
+domains**, keeping **Allow package managers** ticked:
 
-On the instance, click the **codespace icon** next to the dataset → **Create
-new codespace** (or, in GitHub, **Code → Codespaces**). The first start takes a
-few minutes.
+```text
+george.malloyyo.com
+```
 
-### 6. Build
+If Claude later reports another blocked address (for example while loading
+data), add it the same way.
 
-In the codespace terminal, run `claude`. The first time, it asks you to log in:
-pick your Claude account, open the link it shows, sign in, and paste the code
-back into the terminal. Then describe what you want:
+### Step 4: Add the setup script
 
-> add a dataset for my use case from `<table>`, with an overview dashboard,
-> and remove the example dataset
+*Getting better all the time.* **Setup script**, so every session starts with
+the `malloyyo` tool:
 
-Claude always asks where your data lives before it starts. For a database
-other than BigQuery, `/connect-database` adds the connection and tells you which
-secret to add. Never paste a key or password into the chat.
+```bash
+#!/bin/bash
+npm install -g @malloydata/malloyyo || true
+```
 
-### 7. Review and open a pull request
+### Step 5: Add the instance's address
 
-Claude checks the numbers with real queries and shows you the results. To see
-the dashboards yourself, run `malloyyo dashboard dev -C datasets/<name>` and
-open the forwarded port 4173. When you're happy, Claude opens a pull request
-for review.
+*Here, there and everywhere.* **Environment variables**:
 
-### 8. Publish
+```text
+MALLOYYO_URL=https://george.malloyyo.com
+```
 
-Merge the pull request, then:
+### Step 6: Add the BigQuery key (to build models)
 
-- **A new dataset** has to be created once, by an instance admin: on the repo's
-  page on the instance, **Refresh and create missing datasets**. From the
-  codespace, the same thing is
-  `malloyyo publish -i "$MALLOYYO_URL" --repo <owner/repo> --create-datasets`.
-- **After that**, each merge publishes through the webhook from step 3, or
-  click **Refresh from GitHub** on the repo's page.
+*Baby, you can drive my car*, but only to read. Ask whoever manages your
+instance's BigQuery access for the shared read-only key file. On your
+computer, encode it (this copies it on a Mac):
 
-The published model reads the database with the **instance's** credentials, so
-every env name in `malloy-config.json` (such as `BIGQUERY_SERVICE_ACCOUNT_JSON`)
-must also be set on the instance under the same name. If publishing fails with
-"Could not load the default credentials" followed by many "no such field"
-errors, that name is missing on the instance.
+```bash
+base64 -i key.json | pbcopy
+```
+
+Add it under **Environment variables**, never in chat:
+
+```text
+BIGQUERY_SERVICE_ACCOUNT_JSON=<paste>
+```
+
+### Step 7: Get access to load data
+
+*Got to get you into my life.* The shared key can't load data, so loading
+runs as you, in the team's data project, set in `.claude/bigquery-data.json`
+(for george: `shearwater-malloyo-george`; to set one up, see
+[team setup, step 6](docs/team-setup.md#6-a-data-project-for-loading-data)):
+
+1. Ask the data project's owner to give your Google account **BigQuery Data
+   Editor** and **BigQuery Job User** on it.
+2. When you load data, Claude shows a Google sign-in link and a box for the
+   code Google gives you. That's all; the sign-in lasts for the session.
+
+### Step 8: Start a new session
+
+*Tomorrow never knows*, but a new session does: environment changes apply to
+new sessions. Start one and paste the prompt again; Claude confirms you're
+ready.
+
+Then ask for what you want, for example:
+
+> what's in the published data?
+
+> add a dataset for our orders table, with an overview dashboard
+
+**New model repo?** **Use this template → Create a new repository** (don't
+clone it: a clone still pushes here), then have an instance admin add it
+([team setup, step 3](docs/team-setup.md#3-let-the-instance-read-the-repo-and-publish-on-merge)).
+
+## Publishing
+
+*We can work it out.* Claude opens a pull request; merging it publishes through the repo's webhook,
+or via **Refresh from GitHub** on the repo's page on the instance. A **new**
+dataset is created once by an instance admin: **Refresh and create missing
+datasets**.
+
+**Refresh** fails silently. If a dataset doesn't appear, ask Claude to run
+`malloyyo publish -i "$MALLOYYO_URL" --repo <owner/repo> --create-datasets`
+and read the error.
+
+The instance reads the database with its own credentials, so every env name in
+`malloy-config.json` (e.g. `BIGQUERY_SERVICE_ACCOUNT_JSON`) must be set on the
+instance too. "Could not load the default credentials" followed by "no such
+field" errors means one is missing there.
+
+## Other ways to work
+
+In a codespace or on a laptop, install `malloyyo`
+(`npm install -g @malloydata/malloyyo`; codespaces have it) and set
+`MALLOYYO_URL`, `MALLOYYO_TOKEN` (an instance token with the **mcp** and
+**publish** scopes, from **Home → Tokens**) and, for BigQuery,
+`BIGQUERY_SERVICE_ACCOUNT_JSON`: codespace secrets under **Settings → Secrets
+and variables → Codespaces**, or your shell. Then run `claude` in the repo.
 
 ## What's in the repo
 
 | Path | Purpose |
 | --- | --- |
-| `.devcontainer/devcontainer.json` | Prebuilt `malloyyo-devcontainer` image |
-| `.mcp.json` | `malloyyo_author` (local build tools) and `malloyyo_instance` (the instance at `MALLOYYO_URL`) MCP servers |
-| `.claude/` | Pre-approved tools and the `connect-database` skill |
 | `CLAUDE.md` | How Claude works in this repo |
-| `malloy-config.json` | `bigquery` (reads `BIGQUERY_SERVICE_ACCOUNT_JSON`), and `duckdb` for the example only |
+| `.claude/skills/` | `start`, `share`, `bigquery-data`, `connect-database`, `google-login`, and two open-source Malloy skills ([docs/malloy-skills.md](docs/malloy-skills.md)) |
+| `.claude/bin/`, `.claude/hooks/` | The setup check (`malloyyo-doctor`), run at session start; `bq-data` for loading BigQuery; Google sign-in |
+| `.claude/bigquery-data.json` | The team's BigQuery data project, location, and the instance's service account |
+| `.claude/cloud-environment-setup.sh` | Setup script for a cloud environment |
+| `.mcp.json` | Local build tools, and the instance at `MALLOYYO_URL` |
+| `malloy-config.json` | Connections: `bigquery`, and `duckdb` for the example |
 | `datasets/` | One directory per dataset; `example/` is a placeholder to replace |
+
+*And in the end, the data you take is equal to the data you make.*
